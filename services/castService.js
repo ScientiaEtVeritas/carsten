@@ -1,24 +1,66 @@
 module.exports = function (context) {
 
 	/* Imports */
+	var uuid = require('node-uuid');
 	var castService = context.services.castService;
 	var rest = context.rest;
 
 	/* Data store */
 	var receivers = [];
-	receivers.locked = false;
+	var locked = false;
 
-	// Get all registered receivers
+	/**
+	 * Cast URL
+	 */
+	castService.cast = function (receiver, url, done) {
+
+		var args = {
+			data: {
+				url: url
+			},
+			headers: {
+				'Content-Type': 'application/json'
+			}
+		};
+
+		rest.post(receiver.url + '/rest/queue', args, function (data, response) {
+			if (response.statusCode !== 202) {
+				console.log('Error casting to receiver queue:');
+				console.log(receiver)
+				return done({ code: 500, message: 'Error casting to receiver' });
+			}
+
+			done(null, receiver);
+		});
+	};
+
+	/**
+	 * Get receiver by ID
+	 */
+	castService.getReceiverById = function (id, done) {
+
+		for (var i = 0; i < receivers.length; i++) {
+			if (receivers[i].id == id) {
+				return done(null, receivers[i]);
+			}
+		}
+		
+		done({ code: 404, message: 'Receiver not found'}, null);
+	};
+
+	/**
+	 * Get all connected receivers
+	 */
 	castService.getReceivers = function (done) {
 		console.log('getReceivers')
 
 		if (receivers.length === 0)
 			return done(null, []);
 
-		while (receivers.locked) console.log('LOCKED'); // Wait while locked
+		while (locked) console.log('LOCKED'); // Wait while locked
 		console.log('UNLOCKED');
 
-		receivers.locked = true;
+		locked = true;
 
 		// Make sure we don't return offline receivers
 		var checkOffline = false; // TODO env variable
@@ -29,7 +71,7 @@ module.exports = function (context) {
 			var walk = function () {
 				rest.get(receivers[i], function (data, response) {
 					if (i === receivers.length) {
-						receivers.locked = false;
+						locked = false;
 
 						// Remove offline receivers
 						offlineIndexes.forEach(function (offlineIndex) {
@@ -50,25 +92,34 @@ module.exports = function (context) {
 			};
 		}
 		else {
-			receivers.locked = false;
+			locked = false;
 			done(null, receivers);
 		}
 	};
 
-	// Add receiver
+	/**
+	 * Add a receiver
+	 */
 	castService.addReceiver = function (newReceiver, done) {
-		while (receivers.locked);
-		receivers.locked = true;
+		while (locked);
+		locked = true;
 
 		for (var i = 0; i < receivers.length; i++) {
 			if (receivers[i].url == newReceiver.url) {
+				console.log('Receiver already registered.');
+				newReceiver.id = receivers[i].id;
 				receivers[i] = newReceiver;
+				locked = false;
 				return done(null, receivers[i]);
 			}
 		}
 
+		// Generate UUID
+		newReceiver.id = uuid.v4();
+
 		receivers.push(newReceiver);
-		receivers.locked = false;
+
+		locked = false;
 		done(null, newReceiver);
 	};
 };

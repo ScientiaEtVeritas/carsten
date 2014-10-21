@@ -1,0 +1,20 @@
+{
+  "name": "carsten.io",
+  "version": "0.0.1",
+  "homepage": "https://github.com/MitchK/carsten.io",
+  "authors": [
+    "Michael Kunzmann <michael.kunzmann@sap.com>"
+  ],
+  "license": "Apache.20",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "angularjs": "~1.3.0",
+    "bootstrap": "~3.2.0"
+  }
+}

@@ -1,4 +1,3 @@
-
 module.exports = function (context) {
 
 	/* Imports */
@@ -11,7 +10,33 @@ module.exports = function (context) {
 		console.log('GET /');
 
 		// Deliver index.html
-		res.send(200, 'OK');
+		res.status(200, 'OK').end();
+	});
+
+	// POST /rest/cast
+	context.app.post('/rest/cast', function (req, res) {
+
+		if (!req.body || !req.body.id || !req.body.url) {
+			console.error('Invalid body sent');
+			return res.status(400).end();
+		}
+
+		castService.getReceiverById(req.body.id, function (err, receiver) {
+			if (err) {
+				console.log('Error getting receiver by id');
+				console.log(err);
+				return res.status(err.code).end();
+			}
+
+			castService.cast(receiver, req.body.url, function (err) {
+				if (err) {
+					console.log('Error with casting to receiver');
+					return res.status(500).end();
+				}
+
+				res.status(202).end();
+			});
+		});
 	});
 
 	// GET /rest/receivers
@@ -21,8 +46,9 @@ module.exports = function (context) {
 		castService.getReceivers(function (err, receivers) {
 			if (err) {
 				console.err(err);
-				return res.send(500);
+				return res.status(500).end();
 			}
+			console.log(receivers);
 			res.send(receivers);
 		})
 	});
@@ -34,16 +60,16 @@ module.exports = function (context) {
 
 		if (!req.body || !req.body.url) {
 			console.log('Invalid request');
-			return res.send(400);
+			return res.status(400).end();
 		}
 
 		castService.addReceiver(req.body, function (err, newReceiver) {
 			if (err) {
 				console.err(err);
-				return res.send(500);
+				return res.status(500).end();
 			}
 
-			res.send(201);
+			res.status(201, newReceiver).end();
 		});
 	});
 };
