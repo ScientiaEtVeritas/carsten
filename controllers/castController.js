@@ -3,20 +3,10 @@ module.exports = function (context) {
 	/* Imports */
 	var castService = context.services.castService;
 
-	/* Route definitions */
-
-	// GET /
-	context.app.get('/', function (req, res) {
-		console.log('GET /');
-
-		// Deliver index.html
-		res.status(200, 'OK').end();
-	});
-
 	// POST /rest/cast
 	context.app.post('/rest/cast', function (req, res) {
 
-		if (!req.body || !req.body.id || !req.body.url) {
+		if (!req.body || !req.body.id) {
 			console.error('Invalid body sent');
 			return res.status(400).end();
 		}

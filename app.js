@@ -27,30 +27,6 @@ context.app.use(bodyParser.urlencoded({
 // Init Chrome
 context.page = null;
 
-var connectToChrome = function () {
-	Chrome(function (chrome) {
-			with (chrome) {
-				on('Network.requestWillBeSent', function (message) {
-					console.log('Sending request...');
-				});
-				on('Page.loadEventFired', function () {
-					console.log('Page.loadEventFired');
-				});
-				Network.enable();
-		            
-				page = Page;
-				page.enable();
-				page.navigate({'url': "http://localhost:" + process.env.PORT});
-
-			}
-		}).on('error', function () {
-	        console.error('Cannot connect to Chrome. Retrying in 3 seconds...');
-	        setTimeout(function() {
-	        	connectToChrome();
-			}, 3000);
-		});
-};
-
 // Load components
 console.log('Loading components...');
 ['services', 'controllers'].forEach(function (comp) {

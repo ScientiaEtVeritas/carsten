@@ -14,6 +14,8 @@ module.exports = function (context) {
 	 */
 	castService.cast = function (receiver, url, done) {
 
+		receiver.currentlyCasting = url;
+
 		var args = {
 			data: {
 				url: url
