@@ -11,6 +11,9 @@ var RestClient = require('node-rest-client').Client;
 // Init Context
 var context = {};
 
+// Init config
+context.config = require('./config');
+
 // Init Rest Client
 context.rest = new RestClient();
 
@@ -37,5 +40,5 @@ console.log('Loading components...');
 	});
 });
 
-context.app.listen(3000);
-console.log('Listening on port 3000');
+context.app.listen(context.config.port);
+console.log('Listening on port ' + context.config.port);
