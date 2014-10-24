@@ -1,7 +1,7 @@
 carsten
 ==========
 
-Carsten allows you to *carst* stuff. 
+Carsten allows you to **carst** stuff. 
 Ok, more in detail: The idea is to cast URLs within your network to a receiver. A receiver can be anything. A TV, a projector, a Tablet. 
 
 How we use Carsten currently:
@@ -17,7 +17,7 @@ Carsten is...
  1. Not a way to stream content from one device to another
  2. Not meant for interaction with the carsted stuff. You just show stuff and that is what you want. If you want to interact, hook it up with your HDMI/DVI/... cable and waste a lot of time instead of showing your message.
  3. Agnostic of permissions, roles or users. If you don't want to become annoyed, just turn your receiver off.
- 4. Awesome. Don't question it.
+ 4. One-Click-Awesome. Don't question it.
  
 How it works
 ------------
@@ -30,6 +30,6 @@ That's it.
 Example Receivers
 -----------------
 
-*Receiver for Google Chrome*
+**Receiver for Google Chrome**:
 Simple Node.js web service that remotely controls a Google Chrome instance via the Chrome Debug Protocol.
 https://github.com/MitchK/carsten-receiver
