@@ -32,7 +32,7 @@ Example Receivers
 
 **Receiver for Google Chrome**:
 Simple Node.js web service that remotely controls a Google Chrome instance via the Chrome Debug Protocol.
-https://github.com/MitchK/carsten-receiver
+https://github.com/MitchK/carsten-receiver-google-chrome
 
 Run carsten
 -----------
