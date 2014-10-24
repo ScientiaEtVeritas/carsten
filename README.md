@@ -16,7 +16,8 @@ The philosophy of carst
 Carsten is...
  1. Not a way to stream content from one device to another
  2. Not meant for interaction with the carsted stuff. You just show stuff and that is what you want. If you want to interact, hook it up with your HDMI/DVI/... cable and waste a lot of time instead of showing your message.
- 3. Awesome. Don't question it.
+ 3. Agnostic of permissions, roles or users. If you don't want to become annoyed, just turn your receiver off.
+ 4. Awesome. Don't question it.
  
 How it works
 ------------
@@ -25,3 +26,10 @@ How it works
  2. On carsten itself, you can select the receiver and cast an URL to it.
  
 That's it.
+
+Example Receivers
+-----------------
+
+*Receiver for Google Chrome*
+Simple Node.js web service that remotely controls a Google Chrome instance via the Chrome Debug Protocol.
+https://github.com/MitchK/carsten-receiver
