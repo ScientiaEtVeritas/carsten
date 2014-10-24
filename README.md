@@ -33,3 +33,16 @@ Example Receivers
 **Receiver for Google Chrome**:
 Simple Node.js web service that remotely controls a Google Chrome instance via the Chrome Debug Protocol.
 https://github.com/MitchK/carsten-receiver
+
+Run carsten
+-----------
+
+```
+git clone https://github.com/MitchK/carsten.git
+cd carsten
+npm install
+PORT=3000 node app.js
+```
+
+Open http://localhost:3000 in your browser of choice.
+
