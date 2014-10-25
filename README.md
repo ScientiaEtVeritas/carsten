@@ -10,7 +10,8 @@ How we use Carsten currently:
 
  * Play a YouTube video
  * Start a Google Hangout on a TV
- * Monitor your CI build status
+ * Monitor our CI build statuses
+ * Display Doodles
  * ...
 
 The philosophy of carst
