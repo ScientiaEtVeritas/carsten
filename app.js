@@ -3,6 +3,7 @@ var fs = require('fs');
 
 // Express & Express middleware
 var express = require('express');
+var http = require('http');
 var bodyParser = require('body-parser');
 
 // Rest client  
@@ -43,5 +44,15 @@ console.log('Loading components...');
 	});
 });
 
-context.app.listen(context.config.port);
+
+//create server
+context.server = http.createServer(context.app);
+context.server.listen(context.config.port);
 console.log('Listening on port ' + context.config.port);
+
+//connect to receivers via sockets
+context.sockets = [];
+var io = require('socket.io')(context.server);
+io.on('connection', function(socket){
+  context.sockets.push(socket); 
+});
