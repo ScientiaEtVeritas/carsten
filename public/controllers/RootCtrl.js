@@ -23,9 +23,8 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$moda
 		});
     };
 
-    $scope.carst = function (receiver, url) {
+    $scope.carst = function (url) {
     	var data = {
-    		id: receiver.id,
     		url: url
     	};
 

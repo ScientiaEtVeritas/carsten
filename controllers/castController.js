@@ -5,32 +5,19 @@ module.exports = function (context) {
 
 	// POST /rest/cast
 	context.app.post('/rest/cast', function (req, res) {
-
-		if (!req.body || !req.body.id) {
-			console.error('Invalid body sent');
-			return res.status(400).end();
+		for( var i = 0; i < context.sockets.length; i++ )
+		{
+		  context.sockets[i].emit('carst', { url: req.body.url });
 		}
-
-		castService.getReceiverById(req.body.id, function (err, receiver) {
-			if (err) {
-				console.log('Error getting receiver by id');
-				console.log(err);
-				return res.status(err.code).end();
-			}
-
-			castService.cast(receiver, req.body.url, function (err) {
-				if (err) {
-					console.log('Error with casting to receiver');
-					return res.status(500).end();
-				}
-
-				res.status(202).end();
-			});
-		});
+		res.status(200).end();
 	});
 
 	// GET /rest/receivers
 	context.app.get('/rest/receivers', function (req, res) {
+
+		//var clients = context.app.socket;
+		//console.log(context.app.io.sockets.clients);
+
 		console.log('GET /rest/receivers');
 
 		castService.getReceivers(function (err, receivers) {
