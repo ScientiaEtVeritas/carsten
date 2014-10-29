@@ -2,43 +2,26 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$moda
   function ($scope, $http, $rootScope, $location, $modal, $routeParams) {
     
     $scope.urlInput = '';
-    $scope.receivers = [];
+    $scope.carsts = [];
 
 
-    $scope.reloadReceivers = function () {
-      $http.get('/rest/receivers').success(function (data, status, headers, config) {
-        $scope.receivers = data;
+    $scope.loadCarsts = function () {
+      $http.get('/rest/carsts').success(function (data, status, headers, config) {
+        $scope.carsts = data;
       });
     };
 
-    $scope.reset = function (receiver) {
-    	var data = {
-    		id: receiver.id
-    	};
-
-		$http.post('/rest/cast', data).success(function (data, status, headers, config) {
-			console.log('Resetted.');
-		}).error(function (data, status, headers, config) {
-      		console.log('Error resetting.');
-		});
-    };
-
     $scope.carst = function (url) {
-    	var data = {
-    		url: url
-    	};
+    	var data = { url: url };
 
-		$http.post('/rest/cast', data).success(function (data, status, headers, config) {
-			console.log('Carsted.');
-		}).error(function (data, status, headers, config) {
-      		console.log('Error carsting.');
-		});
+  		$http.post('/rest/carst', data).success(function (data, status, headers, config) {
+  		  console.log('carsted');
+  		}).error(function (data, status, headers, config) {
+        console.log('Error carsting.');
+  		});
+
+      $scope.loadCarsts();
     };
 
-
-    $scope.reloadReceivers();
-
-  	console.log('RootCtrl initialized.');
+    $scope.loadCarsts();
   }]);
-
-console.log('RootCtrl loaded.');

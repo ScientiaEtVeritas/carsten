@@ -10,16 +10,6 @@
 		<link href="/components/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet"></link>
 		<link href="/css/index.css" rel="stylesheet" />
 		
-		<!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
-		<!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-		<!--[if lt IE 9]>
-		<script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
-		<script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
-		<![endif]-->
-
-
-
-
 		<!-- Bower Dependencies -->
 		<script type="text/javascript" src="/components/jquery/dist/jquery.min.js"></script>
 		<script type="text/javascript" src="/components/bootstrap/dist/js/bootstrap.min.js"></script>
@@ -51,16 +41,14 @@
 							</div>
 					</form>
 				</center>
-				<h3>All receivers</h3>
+				<h3>Carsts</h3>
 				<p>
-					<ul ng-show="receivers.length == 0" class="list-group">
-						<li class="list-group-item">No connected receivers. Connect a receiver and/or refresh the browser.</li>
+					<ul ng-show="carsts.length == 0" class="list-group">
+						<li class="list-group-item">No casts available.</li>
 					</ul>
-					<ul ng-show="receivers.length > 0" class="list-group">
-						<li ng-repeat="receiver in receivers" class="list-group-item">
-							<button class="btn btn-danger pull-right" ng-click="reset(receiver)">Reset</button>
-							<h5>{{ receiver.name }}</h5>
-							{{ receiver.description }}
+					<ul ng-show="carsts.length > 0" class="list-group">
+						<li ng-repeat="carst in carsts" class="list-group-item">
+							<h5>{{ carst.url }}</h5>
 						</li>
 					</ul>
 				</p>
