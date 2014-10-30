@@ -1,5 +1,5 @@
-app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$modal', '$timeout', '$routeParams',
-  function ($scope, $http, $rootScope, $location, $modal, $routeParams) {
+app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$modal', '$timeout', '$routeParams','$location',
+  function ($scope, $http, $rootScope, $location, $modal, $routeParams, $location) {
     
     $scope.urlInput = '';
     $scope.carsts = [];
@@ -24,4 +24,11 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$moda
     };
 
     $scope.loadCarsts();
+
+    //reload carsts on update event
+    var socket = io.connect($location.origin);
+    socket.on('update', function () {      
+      $scope.loadCarsts();
+    });
+
   }]);

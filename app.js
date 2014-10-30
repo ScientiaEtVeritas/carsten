@@ -8,6 +8,7 @@ var path       = require('path');
 var context        = {};
 context.config     = require('./config');
 context.app        = express();
+context.sockets    = [];
 context.rest       = new require('node-rest-client').Client();
 console.log('config: ' + JSON.stringify(context.config));
 
@@ -29,5 +30,17 @@ modules.forEach(function (fileName) {
 });
 
 //create server
-http.createServer(context.app).listen(context.config.port);
+var server = http.createServer(context.app);
+server.listen(context.config.port);
 console.log('server started');
+
+//creat socket connection
+var io = require('socket.io')(server);
+
+io.on('connection', function (socket) {
+  context.sockets.push(socket);
+  //socket.emit('news', { hello: 'world' });
+  //socket.on('my other event', function (data) {
+  //  console.log(data);
+  //});
+});
