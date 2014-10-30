@@ -4,7 +4,7 @@ carsten
 ==========
 
 Carsten allows you to **carst** stuff. 
-Ok, more in detail: The idea is to cast URLs within your network to a receiver. A receiver can be anything. A TV, a projector, a Tablet. 
+Ok, more in detail: The idea is to cast things within your network to a receiver. A receiver can be anything. A TV, a projector, a Tablet. 
 
 How we use Carsten currently:
 
@@ -25,8 +25,10 @@ Carsten is...
 How it works
 ------------
 
- 1. A receiver registers itself with a REST hook at the carsten broadcast
- 2. On carsten itself, you can select the receiver and cast an URL to it.
+ 1. On carsten itself, you can add a carst to a queue
+ 2. A receiver can ask for the current carst and do stuff with it
+ 3. Carsten will remove the current carst from the queue after a specific timeout
+ 
  
 That's it.
 
@@ -41,7 +43,7 @@ Run carsten
 -----------
 
 ```
-git clone https://github.com/MitchK/carsten.git
+git clone https://github.com/carst-it/carsten.git
 cd carsten
 npm install
 PORT=3000 node app.js
