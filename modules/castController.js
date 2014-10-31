@@ -21,15 +21,15 @@ module.exports = function (context) {
 	context.app.post('/rest/slack_carst', function (req, res) {
 		if(context.config.slackToken === req.body.token && req.body.trigger_word === 'carst')
 		{
-		  var command = req.body.text.split(" ");
-		  if(command.length === 2)
-		  {
-		  	var url = command[1].replace("<","").replace(">","");
-		    carsts.push({ url: url });
-		    pushUpdateEvent();
-		    var response = {"text":"carsted"};
-		    res.send(response);
-		  }
+			var command = req.body.text.split(" ");
+		 	if(command.length === 2)
+		  	{
+		  		var url = command[1].replace("<","").replace(">","");
+		    	carsts.push({ url: url });
+		    	pushUpdateEvent();
+		    	var response = {"text":"carsted"};
+		    	res.send(response);
+		  	}
 		}
 	});
 
