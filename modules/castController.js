@@ -6,7 +6,7 @@ module.exports = function (context) {
 		for( var i = 0; i < context.sockets.length; i++ )
 		{
 			var socket = context.sockets[i];
-			socket.broadcast.emit('update');	
+			socket.emit('update');	
 		}	
 	}
 
@@ -15,6 +15,22 @@ module.exports = function (context) {
 		carsts.push({ url: req.body.url });
 		res.send({});
 		pushUpdateEvent();
+	});
+
+	//post a carst from slack
+	context.app.post('/rest/slack_carst', function (req, res) {
+		if(context.config.slackToken === req.body.token && req.body.trigger_word === 'carst')
+		{
+		  var command = req.body.text.split(" ");
+		  if(command.length === 2)
+		  {
+		  	var url = command[1].replace("<","").replace(">","");
+		    carsts.push({ url: url });
+		    pushUpdateEvent();
+		    var response = {"text":"carsted"};
+		    res.send(response);
+		  }
+		}
 	});
 
 	//get carst
