@@ -1,0 +1,7 @@
+
+language: node_js
+cache:
+  directories:
+  - node_modules
+after_script:
+- if [[ $TRAVIS_PULL_REQUEST == 'false' && $TRAVIS_BRANCH == 'master' ]]; then ./.cf.sh carsten.io; fi
