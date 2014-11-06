@@ -29,17 +29,8 @@ How it works
 
  1. On carsten itself, you can add a carst to a queue
  2. A receiver can ask for the current carst and do stuff with it
- 3. Carsten will remove the current carst from the queue after a specific timeout
- 
- 
+
 That's it.
-
-Example Receivers
------------------
-
-**Receiver for Google Chrome**:
-Simple Node.js web service that remotely controls a Google Chrome instance via the Chrome Debug Protocol.
-https://github.com/MitchK/carsten-receiver-google-chrome
 
 Run carsten
 -----------
