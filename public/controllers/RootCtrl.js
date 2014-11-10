@@ -23,6 +23,14 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$moda
       $scope.loadCarsts();
     };
 
+    $scope.deleteCarst = function(carst) {
+      $http.post('/remove/carst', carst).success(function (data, status, headers, config) {
+        console.log('removed');
+      }).error(function (data, status, headers, config) {
+        console.log('Error removing.');
+      });
+    };
+
     $scope.loadCarsts();
 
     //reload carsts on update event

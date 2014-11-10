@@ -32,6 +32,7 @@ modules.forEach(function (fileName) {
 //create server
 var server = http.createServer(context.app);
 server.listen(context.config.port);
+server.timeout = 500000000;
 console.log('server started');
 
 //creat socket connection
@@ -39,8 +40,4 @@ var io = require('socket.io')(server);
 
 io.on('connection', function (socket) {
   context.sockets.push(socket);
-  //socket.emit('news', { hello: 'world' });
-  //socket.on('my other event', function (data) {
-  //  console.log(data);
-  //});
 });
