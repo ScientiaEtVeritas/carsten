@@ -26,8 +26,7 @@
 	<body ng-controller="RootCtrl">
 		<div class="container">
 			<div class="jumbotron">
-				<center>
-					<h1>Carsten</h1>
+					<h1>Carsten &#10084;</h1>
 					<p>
 						With Carsten you can <strong>carst</strong> content to screens within your network.<br>
 					</p>
@@ -37,24 +36,26 @@
 					    <input type="text" ng-model="urlInput" class="form-control" id="exampleInputEmail2" placeholder="Enter URL">
 					  </div>
 							<div class="btn-group">
-							  <button type="button" class="btn btn-success" ng-click="carst(urlInput)">
-							    Carst
+							  <button type="button" class="btn" ng-click="carst(urlInput)">
+								  <span class="glyphicon glyphicon-transfer"></span> Carst
 							  </button>
 							</div>
 					</form>
-				</center>
 				<h3>Carsts</h3>
-				<p>
-					<ul ng-show="carsts.length == 0" class="list-group">
+					<div ng-show="carsts.length == 0">
 						<li class="list-group-item">No casts available.</li>
-					</ul>
-					<ul ng-show="carsts.length > 0" class="list-group">
-						<li ng-repeat="carst in carsts" class="list-group-item">
-							<h5>{{ carst.url }}</h5>
-						</li>
-					</ul>
-				</p>
-
+					</div>
+					<div ng-show="carsts.length > 0" class="panel panel-default">
+						<div class="panel-body">
+							<div ng-repeat="carst in carsts" style="height:45px;" ng-class="$index !== 0 ? 'borderTop' : ''">
+								<div style="position: relative;">
+									<div style="position:absolute; left:10px; top:12px; display: inline-block; border-right:1px solid #cccccc; width:40px;">{{ carst.id }}</div>
+									<div style="position:absolute; left:60px; top:12px; display: inline-block;">{{ carst.url }}</div>
+									<div style="position:absolute; right:20px; top:6px; display: inline-block; width:80px;"><button type="button" class="btn" ng-click="deleteCarst(carst)"><span class="glyphicon glyphicon-remove"></span> Löschen</button></div>
+								</div>
+							</div>
+						</div>
+					</div>
 			</div>
 		</div>
   </body>
