@@ -30,32 +30,56 @@
 					<p>
 						With Carsten you can <strong>carst</strong> content to screens within your network.<br>
 					</p>
+				<div class="dropdown" style="float:right;">
+					<strong>You are on</strong>
+					<button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown">
+						<span ng-bind="channel"></span>
+						<span class="caret"></span>
+					</button>
+					<ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu1">
+						<li role="presentation"><a role="menuitem" tabindex="-1" href="#" ng-repeat="channel in channels" ng-click="setChannel(channel)">{{channel}}</a></li>
+					</ul>
+				</div>
 					<form class="form-inline" role="form">
 					  <div class="form-group">
-					    <label class="sr-only" for="exampleInputEmail2">URL</label>
-					    <input type="text" ng-model="urlInput" class="form-control" id="exampleInputEmail2" placeholder="Enter URL">
+					    <input type="text" style="width:300px;" ng-model="input" ng-keyup="inputKeyup($event)" class="form-control" placeholder="Enter something :)">
+						  <input type="text" style="width:70px;" ng-model="inputDuration" ng-keyup="inputKeyup($event)" class="form-control" placeholder="mm:ss">
 					  </div>
 							<div class="btn-group">
-							  <button type="button" class="btn" ng-click="carst(urlInput)">
-								  <span class="glyphicon glyphicon-transfer"></span> Carst
+							  <button type="button" class="btn" ng-click="carst(input, channel, inputDuration)">
+								  <span class="glyphicon glyphicon-transfer"></span> Carst to {{countReceivers[channel] > 1 ? countReceivers[channel] + ' receivers' : (countReceivers[channel] == 1 ? countReceivers[channel] + ' receiver' : 'nobody')}}
 							  </button>
 							</div>
 					</form>
 				<h3>Carsts</h3>
-					<div ng-show="carsts.length == 0">
+					<div ng-show="carsts[channel].length == 0">
 						<li class="list-group-item">No casts available.</li>
 					</div>
-					<div ng-show="carsts.length > 0" class="panel panel-default">
+					<div ng-show="carsts[channel].length > 0" class="panel panel-default">
 						<div class="panel-body">
-							<div ng-repeat="carst in carsts" style="height:45px;" ng-class="$index !== 0 ? 'borderTop' : ''">
+							<div ng-repeat="carst in carsts[channel]" style="height:45px;" ng-class="$index !== 0 ? 'borderTop' : ''">
 								<div style="position: relative;">
 									<div style="position:absolute; left:10px; top:12px; display: inline-block; border-right:1px solid #cccccc; width:40px;">{{ carst.id }}</div>
 									<div style="position:absolute; left:60px; top:12px; display: inline-block;">{{ carst.url }}</div>
-									<div style="position:absolute; right:20px; top:6px; display: inline-block; width:80px;"><button type="button" class="btn" ng-click="deleteCarst(carst)"><span class="glyphicon glyphicon-remove"></span> Löschen</button></div>
+									<div style="position:absolute; right:150px; top:12px; display: inline-block;">{{ carst.timeString }}</div>
+									<div style="position:absolute; right:20px; top:6px; display: inline-block; width:80px;"><button type="button" class="btn" ng-click="deleteCarst(carst, channel)"><span class="glyphicon glyphicon-remove"></span> Löschen</button></div>
 								</div>
 							</div>
 						</div>
 					</div>
+				<h3>Commands history (max. 5)</h3>
+				<div ng-show="commands[channel].length == 0">
+					<li class="list-group-item">No commands.</li>
+				</div>
+				<div ng-show="commands[channel].length > 0" class="panel panel-default">
+					<div class="panel-body">
+						<div ng-repeat="command in commands[channel] | orderBy : 'id' : true | limitTo:5 " style="height:45px;" ng-class="$index !== 0 ? 'borderTop' : ''">
+							<div style="position: relative;">
+								<div style="position:absolute; left:10px; top:12px; display: inline-block;">{{ command.command }}</div>
+							</div>
+						</div>
+					</div>
+				</div>
 			</div>
 		</div>
   </body>

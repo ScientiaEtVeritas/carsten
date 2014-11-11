@@ -12,6 +12,19 @@ context.sockets    = [];
 context.rest       = new require('node-rest-client').Client();
 console.log('config: ' + JSON.stringify(context.config));
 
+//create server
+var server = http.createServer(context.app);
+server.listen(context.config.port);
+server.timeout = 500000000;
+console.log('server started');
+
+//creat socket connection
+var io = require('socket.io')(server);
+
+io.on('connection', function (socket) {
+	context.sockets.push(socket);
+});
+
 //initialize
 context.app.use(bodyParser.json());
 context.app.use(bodyParser.urlencoded({ extended: true }));
@@ -24,20 +37,7 @@ modules.forEach(function (fileName) {
 	{
 		var module = path.basename(fileName, '.js');
 		context[module] = require('./modules/' + module);
-		context[module](context);
+		context[module](context, io);
 		console.log('  loaded module ' + module);
 	}
-});
-
-//create server
-var server = http.createServer(context.app);
-server.listen(context.config.port);
-server.timeout = 500000000;
-console.log('server started');
-
-//creat socket connection
-var io = require('socket.io')(server);
-
-io.on('connection', function (socket) {
-  context.sockets.push(socket);
 });
