@@ -1,15 +1,16 @@
 module.exports = function (context, io) {
+
 	var gID = 0;
 	var cID = 0;
 	var receivers = {
 
 	};
 	var channels = [];
-	channels[0] = '#global';
+	channels[0] = context.config.defaultChannel;
 	var carsts = [];
 	var commands = [];
 	var defers = [];
-	defers['#global'] = {
+	defers[context.config.defaultChannel] = {
 		command : [],
 		carst : []
 	};
@@ -19,8 +20,8 @@ module.exports = function (context, io) {
 		'#global' : 0
 	};
 
-	carsts['#global'] = [];
-	commands['#global'] = [];
+	carsts[context.config.defaultChannel] = [];
+	commands[context.config.defaultChannel] = [];
 
 	function closeChannel(channel) {
 		delete carsts[channel];
@@ -130,9 +131,9 @@ module.exports = function (context, io) {
 	});*/
 
 	//get carst
-	context.app.get('/rest/carst', function (req, res) {
+	context.app.get('/rest/carst/:hostname', function (req, res) {
 		var carst = {};
-		var hostname = req.connection.remoteAddress;
+		var hostname = req.params.hostname;
 		var channel = receivers[hostname];
 		closed[hostname] = false;
 		console.log('************ DEBUGGING: ', hostname, channel);
@@ -164,9 +165,9 @@ module.exports = function (context, io) {
 		}
 	});
 
-	context.app.get('/rest/command', function (req, res) {
+	context.app.get('/rest/command/:hostname', function (req, res) {
 		var command = {};
-		var hostname = req.connection.remoteAddress;
+		var hostname = req.params.hostname;
 		var channel = receivers[hostname];
 		if(commands[channel].length > 0 && commands[channel][commands[channel].length - 1].id !== lastDefers[hostname].command) {
 			sendToReceiver(res, req, 'command', commands[channel][commands[channel].length - 1]);
@@ -215,7 +216,7 @@ module.exports = function (context, io) {
 
 	context.app.post('/rest/init', function(req, res) {
 		var channel = req.body.channel || '#global';
-		var hostname = req.connection.remoteAddress;
+		var hostname = req.body.hostname;
 		if(hostname) {
 			console.log("receiver with address" + hostname + " joined channel " + channel);
 			if(!lastDefers[hostname]) {
