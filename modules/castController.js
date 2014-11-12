@@ -54,9 +54,9 @@ module.exports = function (context, io) {
 		logNum++;
 	}
 
-	function sendToReceiver(res, req, type, obj) {
-		logSending(req.connection.remoteAddress, type, obj, 'sendToReceiver', '-');
-		lastDefers[req.connection.remoteAddress][type] = obj.id;
+	function sendToReceiver(res, hostname, type, obj) {
+		logSending(hostname, type, obj, 'sendToReceiver', '-');
+		lastDefers[hostname][type] = obj.id;
 		res.send(obj);
 	}
 
@@ -82,6 +82,7 @@ module.exports = function (context, io) {
 		var channel = req.body.channel;
 		var newCarst = {
 			id: gID,
+			title: req.body.title,
 			url: req.body.url,
 			time: req.body.time,
 			timeString: req.body.timeString
@@ -136,9 +137,8 @@ module.exports = function (context, io) {
 		var hostname = req.params.hostname;
 		var channel = receivers[hostname];
 		closed[hostname] = false;
-		console.log('************ DEBUGGING: ', hostname, channel);
 		if(carsts[channel].length > 0 && carsts[channel][0].id !== lastDefers[hostname].carst) {
-			sendToReceiver(res, req, 'carst', carsts[channel][0]);
+			sendToReceiver(res, hostname, 'carst', carsts[channel][0]);
 		} else {
 			defers[channel].carst.push({receiver: hostname, respond : res});
 			req.connection.on('close',function(){
@@ -178,17 +178,17 @@ module.exports = function (context, io) {
 
 	//get all carsts
 	context.app.get('/rest/carsts/:channel', function (req, res) {
-		logSendingToClient(carsts['#' + req.params.channel], '#' + req.params.channel, 'carsts');
+		//logSendingToClient(carsts['#' + req.params.channel], '#' + req.params.channel, 'carsts');
 		res.send(carsts['#' + req.params.channel]);
 	});
 
 	context.app.get('/rest/commands/:channel', function (req, res) {
-		logSendingToClient(commands['#' + req.params.channel], '#' + req.params.channel, 'commands');
+		//logSendingToClient(commands['#' + req.params.channel], '#' + req.params.channel, 'commands');
 		res.send(commands['#' + req.params.channel]);
 	});
 
 	context.app.get('/rest/channels', function (req, res) {
-		logSendingToClient(channels, '-', 'channels');
+		//logSendingToClient(channels, '-', 'channels');
 		res.send(channels);
 	});
 
@@ -241,11 +241,11 @@ module.exports = function (context, io) {
 				commands[channel] = [];
 			}
 
-			console.log(receivers[hostname], hostname, channel);
+
+
 
 			if(!receivers[hostname]) {
-				receivers[hostname] = channel;
-				console.log("logged... " + receivers[hostname]);
+				receivers[hostname] = receivers[hostname] || channel;
 			}
 
 			if(!countReceivers[channel]) {
