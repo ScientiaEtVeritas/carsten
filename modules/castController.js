@@ -54,8 +54,8 @@ module.exports = function (context, io) {
 	}
 
 	function sendToReceiver(res, req, type, obj) {
-		logSending(req.hostname, type, obj, 'sendToReceiver', '-');
-		lastDefers[req.hostname][type] = obj.id;
+		logSending(req.connection.remoteAddress, type, obj, 'sendToReceiver', '-');
+		lastDefers[req.connection.remoteAddress][type] = obj.id;
 		res.send(obj);
 	}
 
@@ -132,7 +132,7 @@ module.exports = function (context, io) {
 	//get carst
 	context.app.get('/rest/carst', function (req, res) {
 		var carst = {};
-		var hostname = req.hostname;
+		var hostname = req.connection.remoteAddress;
 		var channel = receivers[hostname];
 		closed[hostname] = false;
 		if(carsts[channel].length > 0 && carsts[channel][0].id !== lastDefers[hostname].carst) {
@@ -165,11 +165,12 @@ module.exports = function (context, io) {
 
 	context.app.get('/rest/command', function (req, res) {
 		var command = {};
-		var channel = receivers[req.hostname];
-		if(commands[channel].length > 0 && commands[channel][commands[channel].length - 1].id !== lastDefers[req.hostname].command) {
+		var hostname = req.connection.remoteAddress;
+		var channel = receivers[hostname];
+		if(commands[channel].length > 0 && commands[channel][commands[channel].length - 1].id !== lastDefers[hostname].command) {
 			sendToReceiver(res, req, 'command', commands[channel][commands[channel].length - 1]);
 		} else {
-			defers[channel].command.push({receiver: req.hostname, respond : res});
+			defers[channel].command.push({receiver: hostname, respond : res});
 		}
 	});
 
@@ -213,9 +214,9 @@ module.exports = function (context, io) {
 
 	context.app.post('/rest/init', function(req, res) {
 		var channel = req.body.channel || '#global';
-		var hostname = req.hostname;
+		var hostname = req.connection.remoteAddress;
 		if(hostname) {
-			console.log("receiver called " + hostname + " joined channel " + channel);
+			console.log("receiver with address" + hostname + " joined channel " + channel);
 			if(!lastDefers[hostname]) {
 				lastDefers[hostname] = {
 					command : -1,
