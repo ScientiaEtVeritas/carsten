@@ -215,6 +215,7 @@ module.exports = function (context, io) {
 	});
 
 	context.app.post('/rest/init', function(req, res) {
+		console.log("Registration...");
 		var channel = req.body.channel || '#global';
 		var hostname = req.body.hostname;
 		if(hostname) {
@@ -226,6 +227,8 @@ module.exports = function (context, io) {
 				};
 			}
 
+			console.log('channels[0]' + channels[0]);
+
 			if(channels.indexOf(channel) === -1) {
 				channels.push(channel);
 			}
@@ -236,8 +239,12 @@ module.exports = function (context, io) {
 			if(!commands[channel]) {
 				commands[channel] = [];
 			}
+
+			console.log(receivers[hostname], hostname, channel);
+
 			if(!receivers[hostname]) {
 				receivers[hostname] = channel;
+				console.log("logged... " + receivers[hostname]);
 			}
 
 			if(!countReceivers[channel]) {
