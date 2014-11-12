@@ -1,3 +1,9 @@
+app.filter('to_html', ['$sce', function($sce){
+  return function(text) {
+    return $sce.trustAsHtml(text);
+  };
+}]);
+
 app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$window',
   function ($scope, $http, $rootScope, $location, $window) {
     
@@ -30,6 +36,8 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
     var re = new RegExp("^((http|https|app)://)|(www.)", "i");
     var reTime1 = new RegExp("^([0-9]{1,2}):([0-9]{1,2})$", "i");
     var reTime2 = new RegExp("^([0-9]{0,2})m ?([0-9]{0,2})s$", "i");
+    var reTime3 = new RegExp("^PT([0-9]{1,2})M([0-9]{1,2})S$", "i");
+    var reYoutube = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#\&\?]*).*/;
 
     $scope.loadCarsts = function () {
       $http.get('/rest/carsts/' + $scope.channel.substring(1)).success(function (data, status, headers, config) {
@@ -69,57 +77,81 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
       }
     };
 
-    $scope.carst = function (input, channel) {
+    $scope.carst = function () {
 
-      if($scope.input.length > 0) {
+      var input = $scope.input;
+      var inputDuration = $scope.inputDuration;
+      var channel = $scope.channel;
+      var match;
+      var resultTime;
 
-        var  time = $scope.inputDuration;
-        $scope.input = '';
-        $scope.inputDuration = '';
-
-        var data;
-
-        if (re.test(input)) {
-
-          if(reTime1.test(time)) {
-            var match = time.match(reTime1);
-            var resultTime = +match[1]*6000 + +match[2]*1000;
-          } else if(reTime2.test(time)) {
-            match = time.match(reTime2);
-            resultTime = +match[1]*6000 + +match[2]*1000;
-          } else {
-            resultTime = 25000;
-            time = '00:25';
-          }
-
-         /* var min = Math.floor(resultTime/6000);
-          var sec = (resultTime - (min*6000))/1000;
-
-          time = ('0' + min).slice(-2) + ':' + ('0' + sec).slice(-2);*/
-
-          data = {
-            url: input,
-            channel: channel,
-            time: resultTime,
-            timeString: time
-          };
-          $http.post('/rest/carst', data).success(function (data, status, headers, config) {
-            console.log('carsted');
-          }).error(function (data, status, headers, config) {
-            console.log('Error carsting.');
+      function getYouTubeTime(input, channel, callback) {
+          match = $scope.input.match(reYoutube);
+          $http.get('https://www.googleapis.com/youtube/v3/videos?id=' + match[7] + '&key=AIzaSyDjWgTEWP4-Wz3lgQjlXO-PJJ2DuHfbq9w&part=contentDetails,snippet').success(function(data) {
+            var title = '<span class="glyphicon glyphicon-facetime-video"></span> ' + data.items[0].snippet.title;
+            callback(input, channel, data.items[0].contentDetails.duration, title);
           });
-          $scope.loadCarsts();
+      }
+
+      function sendToServer(type, data) {
+        console.log(data);
+        $http.post(type, data).success(function () {
+          console.log('Sent to server successfully');
+        }).error(function (data, status, headers, config) {
+          console.log('Sent to server failed');
+        });
+      }
+
+      function handleCommand(input, channel) {
+        var data = {
+          command: input,
+          channel: channel
+        };
+        sendToServer('/rest/command', data);
+        $scope.loadCommands();
+      }
+
+      function handleCarst(input, channel, inputDuration, title) {
+        title = title || input;
+        var timeString;
+        if(reTime1.test(inputDuration)) {
+          match = inputDuration.match(reTime1);
+          resultTime = +match[1]*60000 + +match[2]*1000;
+        } else if(reTime2.test(inputDuration)) {
+          match = inputDuration.match(reTime2);
+          resultTime = +match[1]*60000 + +match[2]*1000;
+        } else if(reTime3.test(inputDuration)) {
+          match = inputDuration.match(reTime3);
+          resultTime = +match[1]*60000 + +match[2]*1000;
         } else {
-          data = {
-            command: input,
-            channel: $scope.channel
-          };
-          $http.post('/rest/command', data).success(function (data, status, headers, config) {
-            console.log('commanded');
-          }).error(function (data, status, headers, config) {
-            console.log('Error command.');
-          });
-          $scope.loadCommands();
+          resultTime = 25000;
+        }
+
+        var min = Math.floor(resultTime/60000);
+        var sec = (resultTime - (min*60000))/1000;
+        timeString = ('0' + min).slice(-2) + ':' + ('0' + sec).slice(-2);
+
+        var data = {
+          title: title,
+          url: input,
+          channel: channel,
+          time: resultTime,
+          timeString: timeString
+        };
+        sendToServer('/rest/carst', data);
+        $scope.loadCarsts();
+      }
+
+
+      if(input.length > 0) {
+        if (re.test(input)) {
+          if(reYoutube.test(input)) {
+            getYouTubeTime(input, channel, handleCarst);
+          } else {
+            handleCarst(input, channel, inputDuration);
+          }
+        } else {
+          handleCommand(input, channel);
         }
       }
     };
