@@ -218,6 +218,7 @@ module.exports = function (context, io) {
 		console.log("Registration...");
 		var channel = req.body.channel || '#global';
 		var hostname = req.body.hostname;
+		console.log(req.body);
 		if(hostname) {
 			console.log("receiver with address" + hostname + " joined channel " + channel);
 			if(!lastDefers[hostname]) {
