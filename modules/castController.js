@@ -135,6 +135,7 @@ module.exports = function (context, io) {
 		var hostname = req.connection.remoteAddress;
 		var channel = receivers[hostname];
 		closed[hostname] = false;
+		console.log('************ DEBUGGING: ', hostname, channel);
 		if(carsts[channel].length > 0 && carsts[channel][0].id !== lastDefers[hostname].carst) {
 			sendToReceiver(res, req, 'carst', carsts[channel][0]);
 		} else {
