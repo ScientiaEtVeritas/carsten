@@ -12,6 +12,7 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
     $scope.carsts = [];
     $scope.commands = [];
     $scope.countReceivers = [];
+    $scope.playlists = [];
 
     function showMessage(title, options) {
       if ("Notification" in $window) {
@@ -59,6 +60,12 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
       });
     };
 
+    $scope.loadPlaylists = function() {
+      $http.get('/rest/playlists').success(function (data, status, headers, config) {
+        $scope.playlists = data;
+      });
+    };
+
     $scope.loadChannels = function() {
       $http.get('/rest/channels').success(function (data, status, headers, config) {
         $scope.channels = data;
@@ -77,6 +84,15 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
       }
     };
 
+    function sendToServer(type, data) {
+      console.log(data);
+      $http.post(type, data).success(function () {
+        console.log('Sent to server successfully');
+      }).error(function (data, status, headers, config) {
+        console.log('Sent to server failed');
+      });
+    }
+
     $scope.carst = function () {
 
       var input = $scope.input;
@@ -85,21 +101,15 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
       var match;
       var resultTime;
 
+      $scope.input = '';
+      $scope.inputDuration = '';
+
       function getYouTubeTime(input, channel, callback) {
-          match = $scope.input.match(reYoutube);
+          match = input.match(reYoutube);
           $http.get('https://www.googleapis.com/youtube/v3/videos?id=' + match[7] + '&key=AIzaSyDjWgTEWP4-Wz3lgQjlXO-PJJ2DuHfbq9w&part=contentDetails,snippet').success(function(data) {
             var title = '<span class="glyphicon glyphicon-facetime-video"></span> ' + data.items[0].snippet.title;
             callback(input, channel, data.items[0].contentDetails.duration, title);
           });
-      }
-
-      function sendToServer(type, data) {
-        console.log(data);
-        $http.post(type, data).success(function () {
-          console.log('Sent to server successfully');
-        }).error(function (data, status, headers, config) {
-          console.log('Sent to server failed');
-        });
       }
 
       function handleCommand(input, channel) {
@@ -168,8 +178,16 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
       });
     };
 
+    $scope.play = function(playlist) {
+      playlist.carsts.forEach(function(carst) {
+        carst.channel = $scope.channel;
+        sendToServer('/rest/carst', carst);
+      });
+    };
+
     $scope.loadChannels();
     $scope.loadCounters();
+    $scope.loadPlaylists();
 
 
     //reload carsts on update event
