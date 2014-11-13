@@ -75,6 +75,12 @@ module.exports = function (context, io) {
 		'#global' : 0
 	};
 
+	var defaultCarst = [];
+
+	defaultCarst[context.config.defaultChannel] = {
+		id : -2,
+		url : 'app://index'
+	};
 	carsts[context.config.defaultChannel] = [];
 	commands[context.config.defaultChannel] = [];
 
@@ -208,6 +214,8 @@ module.exports = function (context, io) {
 			closed[hostname] = false;
 			if(carsts[channel].length > 0 && carsts[channel][0].id !== lastDefers[hostname].carst) {
 				sendToReceiver(res, hostname, 'carst', carsts[channel][0]);
+			} else if(carsts[channel].length === 0 && lastDefers[hostname].carst !== -2) {
+				sendToReceiver(res, hostname, 'carst', defaultCarst[channel]);
 			} else {
 				defers[channel].carst.push({receiver: hostname, respond : res});
 				req.connection.on('close',function(){
@@ -277,6 +285,17 @@ module.exports = function (context, io) {
 		res.send(commands['#' + req.params.channel]);
 	});
 
+	context.app.get('/rest/defaultCarst/:channel', function (req, res) {
+		res.send(defaultCarst['#' + req.params.channel]);
+	});
+
+	context.app.post('/rest/defaultCarst', function (req, res) {
+		defaultCarst[req.body.channel] = {
+			id : -2,
+			url : req.body.defaultCarst
+		};
+	});
+
 	context.app.get('/rest/playlists', function(req, res) {
 		res.send(playlists);
 	});
@@ -294,8 +313,10 @@ module.exports = function (context, io) {
 		var position = indexOfObject(carsts[channel], 'id', id);
 		if ( position !== null) {
 			carsts[channel].splice(position, 1);
-			if(typeof carsts[channel][0] !== "undefined") {
+			if(position === 0 && typeof carsts[channel][0] !== "undefined") {
 				sendToReceivers(channel, 'carst', carsts[channel][0]);
+			} else if(carsts[channel].length === 0) {
+				sendToReceivers(channel, 'carst', defaultCarst[channel]);
 			}
 			io.sockets.emit('update');
 		}
@@ -305,7 +326,7 @@ module.exports = function (context, io) {
 		var channel = req.body.channel;
 		var id = req.body.carst.id;
 		deleteCarst(channel, id);
-		res.send({});
+		res.end();
 	});
 
 	context.app.post('/rest/init', function(req, res) {
