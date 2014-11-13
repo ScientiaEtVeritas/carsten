@@ -9,6 +9,7 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
     
     $scope.input = '';
     $scope.inputDuration = '';
+    $scope.defaultCarst = [];
     $scope.carsts = [];
     $scope.commands = [];
     $scope.countReceivers = [];
@@ -34,6 +35,14 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
       $scope.loadCommands();
     };
 
+    $scope.setDefault = function(defaultCarst, channel) {
+      var data = {
+        defaultCarst: defaultCarst,
+        channel: channel
+      };
+      sendToServer('/rest/defaultCarst', data);
+    };
+
     var re = new RegExp("^((http|https|app)://)|(www.)", "i");
     var reTime1 = new RegExp("^([0-9]{1,2}):([0-9]{1,2})$", "i");
     var reTime2 = new RegExp("^([0-9]{0,2})m ?([0-9]{0,2})s$", "i");
@@ -50,6 +59,12 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
     $scope.loadCommands = function () {
       $http.get('/rest/commands/' + $scope.channel.substring(1)).success(function (data, status, headers, config) {
         $scope.commands[$scope.channel] = data;
+      });
+    };
+
+    $scope.loadDefaultChannel = function () {
+      $http.get('/rest/defaultCarst/' + $scope.channel.substring(1)).success(function (data, status, headers, config) {
+        $scope.defaultCarst[$scope.channel] = data;
       });
     };
 
@@ -74,6 +89,7 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
           $scope.countReceivers[$scope.channel] = 0;
           $scope.loadCarsts();
           $scope.loadCommands();
+          $scope.loadDefaultChannel();
         }
       });
     };

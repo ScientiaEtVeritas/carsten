@@ -52,11 +52,11 @@
 							</div>
 						<h3>Default carst</h3>
 						<div class="form-group">
-							<input type="text" style="width:300px;" ng-model="input" ng-keyup="inputKeyup($event)" class="form-control" placeholder="Enter something :)">
+							<input type="text" style="width:300px;" ng-model="defaultCarst[channel]" class="form-control" placeholder="Enter something :)">
 						</div>
 						<div class="btn-group">
-							<button type="button" class="btn" ng-click="carst(input, channel, inputDuration)">
-								<span class="glyphicon glyphicon-transfer"></span> Carst to {{countReceivers[channel] > 1 ? countReceivers[channel] + ' receivers' : (countReceivers[channel] == 1 ? countReceivers[channel] + ' receiver' : 'nobody')}}
+							<button type="button" class="btn" ng-click="setDefault(defaultCarst[channel], channel)">
+								<span class="glyphicon glyphicon-floppy-disk"></span> Set
 							</button>
 						</div>
 					</form>
