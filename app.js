@@ -10,13 +10,19 @@ context.config     = require('./config');
 context.app        = express();
 context.sockets    = [];
 context.rest       = new require('node-rest-client').Client();
-console.log('config: ' + JSON.stringify(context.config));
+
+console.log('\n\n*------ CONFIGURATION ------*' +
+'\nPort: ', context.config.port +
+'\nDefault channel: ' + context.config.defaultChannel +
+'\nQueue time: ', context.config.queueTime +
+'\nSlack token: ' + context.config.slackToken + '\n');
 
 //create server
 var server = http.createServer(context.app);
 server.listen(context.config.port);
 server.timeout = 500000000;
-console.log('server started');
+
+console.log('\n*------ SERVER STARTED ------*');
 
 //creat socket connection
 var io = require('socket.io')(server);
@@ -30,7 +36,6 @@ context.app.use(bodyParser.json());
 context.app.use(bodyParser.urlencoded({ extended: true }));
 
 //load modules
-console.log('loading modules..');
 var modules = fs.readdirSync('modules');
 modules.forEach(function (fileName) {
 	if(path.extname(fileName) === '.js')
@@ -38,6 +43,6 @@ modules.forEach(function (fileName) {
 		var module = path.basename(fileName, '.js');
 		context[module] = require('./modules/' + module);
 		context[module](context, io);
-		console.log('  loaded module ' + module);
+		console.log('Module: ' + module);
 	}
 });

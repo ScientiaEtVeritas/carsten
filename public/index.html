@@ -50,6 +50,15 @@
 								  <span class="glyphicon glyphicon-transfer"></span> Carst to {{countReceivers[channel] > 1 ? countReceivers[channel] + ' receivers' : (countReceivers[channel] == 1 ? countReceivers[channel] + ' receiver' : 'nobody')}}
 							  </button>
 							</div>
+						<h3>Default carst</h3>
+						<div class="form-group">
+							<input type="text" style="width:300px;" ng-model="input" ng-keyup="inputKeyup($event)" class="form-control" placeholder="Enter something :)">
+						</div>
+						<div class="btn-group">
+							<button type="button" class="btn" ng-click="carst(input, channel, inputDuration)">
+								<span class="glyphicon glyphicon-transfer"></span> Carst to {{countReceivers[channel] > 1 ? countReceivers[channel] + ' receivers' : (countReceivers[channel] == 1 ? countReceivers[channel] + ' receiver' : 'nobody')}}
+							</button>
+						</div>
 					</form>
 				<h3>Carsts</h3>
 					<div ng-show="carsts[channel].length == 0">
@@ -62,11 +71,30 @@
 									<div style="position:absolute; left:10px; top:12px; display: inline-block; border-right:1px solid #cccccc; width:40px;">{{ carst.id }}</div>
 									<div style="position:absolute; left:60px; top:12px; display: inline-block;" ng-bind-html="carst.title | to_html"></div>
 									<div style="position:absolute; right:150px; top:12px; display: inline-block;">{{ carst.timeString }}</div>
-									<div style="position:absolute; right:20px; top:6px; display: inline-block; width:80px;"><button type="button" class="btn" ng-click="deleteCarst(carst, channel)"><span class="glyphicon glyphicon-remove"></span> Löschen</button></div>
+									<div style="position:absolute; right:20px; top:6px; display: inline-block; width:80px;"><button type="button" class="btn" ng-click="deleteCarst(carst, channel)"><span class="glyphicon glyphicon-remove"></span> Delete</button></div>
 								</div>
 							</div>
 						</div>
 					</div>
+				<h3>Available Playlists</h3>
+				<div ng-show="playlists.length == 0">
+					<li class="list-group-item">No playlists available.</li>
+				</div>
+				<div ng-show="playlists.length > 0" class="panel panel-default">
+					<div class="panel-body">
+						<div ng-repeat="playlist in playlists" ng-class="$index !== 0 ? 'borderTop' : ''" style="position: relative;">
+							<div style="margin:10px;">
+								<div><strong>{{ playlist.title }}</strong></div>
+								<div style="position:absolute; font-size:30px; right: 10px; display: inline-block; cursor: pointer; z-index:100;" ng-click="play(playlist)"><span class="glyphicon glyphicon-play"></span></div>
+								<div ng-repeat="carst in playlist.carsts" style="position: relative;">
+									<div style="position:absolute; left:10px; display: inline-block; width:40px;">{{ carst.id }}</div>
+									<div style="margin-left:40px; display: inline-block;" ng-bind-html="carst.title | to_html"></div>
+									<div style="position:absolute; right: 50px; display: inline-block;">{{ carst.timeString }}</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
 				<h3>Commands history (max. 5)</h3>
 				<div ng-show="commands[channel].length == 0">
 					<li class="list-group-item">No commands.</li>

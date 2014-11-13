@@ -1,5 +1,60 @@
 module.exports = function (context, io) {
 
+	var playlists = [
+		{
+			title: 'Node.js',
+			carsts: [
+				{
+					id: 0,
+					title: 'https://www.youtube.com/watch?v=ndKRjmA6WNA',
+					url: 'https://www.youtube.com/watch?v=ndKRjmA6WNA',
+					time: 20000,
+					timeString: '00:20'
+				},
+				{
+					id: 1,
+					title: 'https://www.youtube.com/watch?v=GJmFG4ffJZU',
+					url: 'https://www.youtube.com/watch?v=GJmFG4ffJZU',
+					time: 40000,
+					timeString: '00:40'
+				},
+				{
+					id: 2,
+					title: 'https://www.youtube.com/watch?v=GJmFG4ffJZU',
+					url: 'https://www.youtube.com/watch?v=GJmFG4ffJZU',
+					time: 40000,
+					timeString: '00:40'
+				},
+				{
+					id: 3,
+					title: 'https://www.youtube.com/watch?v=GJmFG4ffJZU',
+					url: 'https://www.youtube.com/watch?v=GJmFG4ffJZU',
+					time: 40000,
+					timeString: '00:40'
+				}
+			]
+		},
+		{
+			title: 'Node.js',
+			carsts: [
+				{
+					id: 0,
+					title: 'https://www.youtube.com/watch?v=ndKRjmA6WNA',
+					url: 'https://www.youtube.com/watch?v=ndKRjmA6WNA',
+					time: 20000,
+					timeString: '00:20'
+				},
+				{
+					id: 1,
+					title: 'https://www.youtube.com/watch?v=GJmFG4ffJZU',
+					url: 'https://www.youtube.com/watch?v=GJmFG4ffJZU',
+					time: 40000,
+					timeString: '00:40'
+				}
+			]
+		}
+	];
+
 	var gID = 0;
 	var cID = 0;
 	var receivers = {
@@ -35,13 +90,26 @@ module.exports = function (context, io) {
 	var logNum = 0;
 
 	function logSending(host, type, obj, fn, channel) {
-		console.log('\n', logNum, '*------ SENDING TO RECEIVER === START ------*');
-		console.log(logNum,'To: ', host);
-		console.log(logNum,'Type: ' + type);
-		console.log(logNum,'Obj: ', obj);
-		console.log(logNum,'Fn: ' + fn);
-		console.log(logNum,'Channel: ' + channel);
-		console.log(logNum,'*------- SENDING TO RECEIVER === END -------*');
+		console.log('\n\n*------ SENDING TO RECEIVER ' + logNum + ' === START ------*' +
+		'\nTo: ', host +
+		'\nType: ' + type +
+		'\nObj: ', obj +
+		'\nFn: ' + fn +
+		'\nChannel: ' + channel + '\n');
+		logNum++;
+	}
+
+	function logRegistration(host, channel) {
+		console.log('\n\n*------ REGISTRATION ' + logNum + ' === START ------*' +
+		'\nHostname: ', host +
+		'\nChannel: ' + channel + '\n');
+		logNum++;
+	}
+
+	function logDesregistration(host, channel) {
+		console.log('\n\n*------ DEREGISTRATION ' + logNum + ' === START ------*' +
+		'\nHostname: ', host +
+		'\nChannel: ' + channel + '\n');
 		logNum++;
 	}
 
@@ -61,7 +129,7 @@ module.exports = function (context, io) {
 	}
 
 	function sendToReceivers(channel, type, obj) {
-		if(defers[channel]) {
+		if(defers[channel] && defers[channel][type]) {
 			defers[channel][type].forEach(function(defer) {
 				logSending(defer.receiver, type, obj, 'sendToReceivers', channel);
 				defer.respond.send(obj);
@@ -146,10 +214,26 @@ module.exports = function (context, io) {
 				setTimeout(function() {
 					if(closed[hostname]) {
 						countReceivers[channel]--;
+						delete receivers[hostname];
+						delete lastDefers[hostname];
 						if(countReceivers[channel] === 0 && channel !== channels[0]) {
 							closeChannel(channel);
 							io.sockets.emit('update');
+						} else {
+							var delDefer = {
+								carst: indexOfObject(defers[channel].carst, 'receiver', hostname),
+								command: indexOfObject(defers[channel].command, 'receiver', hostname)
+							};
+							if ( delDefer.carst !== null) {
+								defers[channel].carst.splice(delDefer.carst, 1);
+							}
+							if ( delDefer.command !== null) {
+								defers[channel].command.splice(delDefer.carst, 1);
+							}
 						}
+
+						logDesregistration(hostname, channel);
+
 						io.sockets.emit('message', {
 							title: hostname,
 							options: {
@@ -187,6 +271,10 @@ module.exports = function (context, io) {
 		res.send(commands['#' + req.params.channel]);
 	});
 
+	context.app.get('/rest/playlists', function(req, res) {
+		res.send(playlists);
+	});
+
 	context.app.get('/rest/channels', function (req, res) {
 		//logSendingToClient(channels, '-', 'channels');
 		res.send(channels);
@@ -215,20 +303,19 @@ module.exports = function (context, io) {
 	});
 
 	context.app.post('/rest/init', function(req, res) {
-		console.log("Registration...");
-		var channel = req.body.channel || '#global';
+		var channel = req.body.channel || context.config.defaultChannel;
 		var hostname = req.body.hostname;
-		console.log(req.body);
-		if(hostname) {
-			console.log("receiver with address" + hostname + " joined channel " + channel);
+
+		if(hostname && hostname.length > 3 && !receivers[hostname]) {
+
+			logRegistration(hostname, channel);
+
 			if(!lastDefers[hostname]) {
 				lastDefers[hostname] = {
 					command : -1,
 					carst : - 1
 				};
 			}
-
-			console.log('channels[0]' + channels[0]);
 
 			if(channels.indexOf(channel) === -1) {
 				channels.push(channel);
@@ -240,8 +327,6 @@ module.exports = function (context, io) {
 			if(!commands[channel]) {
 				commands[channel] = [];
 			}
-
-
 
 
 			if(!receivers[hostname]) {
@@ -273,9 +358,25 @@ module.exports = function (context, io) {
 				counter: '' + countReceivers[channel]
 			});
 			io.sockets.emit('update');
-			res.end('true');
+			res.end(JSON.stringify({
+				status: true
+			}));
 		} else {
-			res.end('false');
+			var message;
+			if(!hostname) {
+				message = "Please provide a receiver name.";
+			} else if(!hostname.length > 3) {
+				message = "Receiver name is too short.";
+			} else if(receivers[hostname]) {
+				message = "Receiver name is already taken.";
+			} else {
+				message = "Something went wrong";
+			}
+
+			res.end(JSON.stringify({
+				status: false,
+				message: message
+			}));
 		}
 	});
 
