@@ -202,61 +202,67 @@ module.exports = function (context, io) {
 	//get carst
 	context.app.get('/rest/carst/:hostname', function (req, res) {
 		var carst = {};
-		var hostname = req.params.hostname;
-		var channel = receivers[hostname];
-		closed[hostname] = false;
-		if(carsts[channel].length > 0 && carsts[channel][0].id !== lastDefers[hostname].carst) {
-			sendToReceiver(res, hostname, 'carst', carsts[channel][0]);
-		} else {
-			defers[channel].carst.push({receiver: hostname, respond : res});
-			req.connection.on('close',function(){
-				closed[hostname] = true;
-				setTimeout(function() {
-					if(closed[hostname]) {
-						countReceivers[channel]--;
-						delete receivers[hostname];
-						delete lastDefers[hostname];
-						if(countReceivers[channel] === 0 && channel !== channels[0]) {
-							closeChannel(channel);
-							io.sockets.emit('update');
-						} else {
-							var delDefer = {
-								carst: indexOfObject(defers[channel].carst, 'receiver', hostname),
-								command: indexOfObject(defers[channel].command, 'receiver', hostname)
-							};
-							if ( delDefer.carst !== null) {
-								defers[channel].carst.splice(delDefer.carst, 1);
+		if(req.params.hostname && receivers[req.params.hostname]) {
+			var hostname = req.params.hostname;
+			var channel = receivers[hostname];
+			closed[hostname] = false;
+			if(carsts[channel].length > 0 && carsts[channel][0].id !== lastDefers[hostname].carst) {
+				sendToReceiver(res, hostname, 'carst', carsts[channel][0]);
+			} else {
+				defers[channel].carst.push({receiver: hostname, respond : res});
+				req.connection.on('close',function(){
+					closed[hostname] = true;
+					setTimeout(function() {
+						if(closed[hostname]) {
+							countReceivers[channel]--;
+							delete receivers[hostname];
+							delete lastDefers[hostname];
+							if(countReceivers[channel] === 0 && channel !== channels[0]) {
+								closeChannel(channel);
+								io.sockets.emit('update');
+							} else {
+								var delDefer = {
+									carst: indexOfObject(defers[channel].carst, 'receiver', hostname),
+									command: indexOfObject(defers[channel].command, 'receiver', hostname)
+								};
+								if ( delDefer.carst !== null) {
+									defers[channel].carst.splice(delDefer.carst, 1);
+								}
+								if ( delDefer.command !== null) {
+									defers[channel].command.splice(delDefer.carst, 1);
+								}
 							}
-							if ( delDefer.command !== null) {
-								defers[channel].command.splice(delDefer.carst, 1);
-							}
+
+							logDesregistration(hostname, channel);
+
+							io.sockets.emit('message', {
+								title: hostname,
+								options: {
+									body: hostname + ' disconnected from ' + channel,
+									icon: '../img/info-icon.png'
+								},
+								channel: channel,
+								counter: countReceivers[channel]
+							});
 						}
-
-						logDesregistration(hostname, channel);
-
-						io.sockets.emit('message', {
-							title: hostname,
-							options: {
-								body: hostname + ' disconnected from ' + channel,
-								icon: '../img/info-icon.png'
-							},
-							channel: channel,
-							counter: countReceivers[channel]
-						});
-					}
-				}, 5000);
-			});
+					}, 5000);
+				});
+			}
+		} else {
+			console.log("ERROR: Hostname is undefined.");
 		}
 	});
 
 	context.app.get('/rest/command/:hostname', function (req, res) {
 		var command = {};
-		var hostname = req.params.hostname;
-		var channel = receivers[hostname];
-		if(commands[channel].length > 0 && commands[channel][commands[channel].length - 1].id !== lastDefers[hostname].command) {
-			sendToReceiver(res, req, 'command', commands[channel][commands[channel].length - 1]);
-		} else {
-			defers[channel].command.push({receiver: hostname, respond : res});
+		if(req.params.hostname && receivers[req.params.hostname]) {
+			var hostname = req.params.hostname;
+			var channel = receivers[hostname];
+			if (commands[channel].length > 0 && commands[channel][commands[channel].length - 1].id !== lastDefers[hostname].command) {
+				sendToReceiver(res, req, 'command', commands[channel][commands[channel].length - 1]);
+			} else {
+				defers[channel].command.push({receiver: hostname, respond: res});
+			}
 		}
 	});
 
