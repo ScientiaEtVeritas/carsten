@@ -48,6 +48,7 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
     var reTime2 = new RegExp("^([0-9]{0,2})m ?([0-9]{0,2})s$", "i");
     var reTime3 = new RegExp("^PT([0-9]{1,2})M([0-9]{1,2})S$", "i");
     var reYoutube = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#\&\?]*).*/;
+    var rePlaylist = new RegExp("^playlist:\/\/(.*)$", "i");
 
     $scope.loadCarsts = function () {
       $http.get('/rest/carsts/' + $scope.channel.substring(1)).success(function (data, status, headers, config) {
@@ -65,6 +66,7 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
     $scope.loadDefaultChannel = function () {
       $http.get('/rest/defaultCarst/' + $scope.channel.substring(1)).success(function (data, status, headers, config) {
         $scope.defaultCarst[$scope.channel] = data;
+        console.log($scope.defaultCarst[$scope.channel]);
       });
     };
 
@@ -176,7 +178,15 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
           } else {
             handleCarst(input, channel, inputDuration);
           }
-        } else {
+        } /*else if(rePlaylist.test(input)) {
+          match = input.match(rePlaylist);
+          var index = indexOfObject($scope.playlists, 'title', match[1]);
+          if(index === -1) {
+            alert("Diese Playlist gibt es nicht.");
+          } else {
+            alert(index + ' Schöne Playlist.');
+          }
+        } */else {
           handleCommand(input, channel);
         }
       }
@@ -222,5 +232,14 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
 
       showMessage(data.title, data.options);
     });
+
+   /* function indexOfObject(array, key, value) {
+      for (var i = 0; i < array.length; i++) {
+        if (array[i][key]. === value) {
+          return i;
+        }
+      }
+      return -1;
+    }*/
 
   }]);
