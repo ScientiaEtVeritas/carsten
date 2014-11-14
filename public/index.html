@@ -52,10 +52,10 @@
 							</div>
 						<h3>Default carst</h3>
 						<div class="form-group">
-							<input type="text" style="width:300px;" ng-model="defaultCarst[channel]" class="form-control" placeholder="Enter something :)">
+							<input type="text" style="width:300px;" ng-model="defaultCarst[channel].url" class="form-control" placeholder="Enter something :)">
 						</div>
 						<div class="btn-group">
-							<button type="button" class="btn" ng-click="setDefault(defaultCarst[channel], channel)">
+							<button type="button" class="btn" ng-click="setDefault(defaultCarst[channel].url, channel)">
 								<span class="glyphicon glyphicon-floppy-disk"></span> Set
 							</button>
 						</div>

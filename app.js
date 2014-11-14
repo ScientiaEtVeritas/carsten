@@ -20,7 +20,7 @@ console.log('\n\n*------ CONFIGURATION ------*' +
 //create server
 var server = http.createServer(context.app);
 server.listen(context.config.port);
-server.timeout = 500000000;
+server.timeout = 50000000;
 
 console.log('\n*------ SERVER STARTED ------*');
 

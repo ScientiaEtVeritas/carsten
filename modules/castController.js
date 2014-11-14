@@ -112,7 +112,7 @@ module.exports = function (context, io) {
 		logNum++;
 	}
 
-	function logDesregistration(host, channel) {
+	function logDeregistration(host, channel) {
 		console.log('\n\n*------ DEREGISTRATION ' + logNum + ' === START ------*' +
 		'\nHostname: ', host +
 		'\nChannel: ' + channel + '\n');
@@ -221,7 +221,7 @@ module.exports = function (context, io) {
 				req.connection.on('close',function(){
 					closed[hostname] = true;
 					setTimeout(function() {
-						if(closed[hostname]) {
+						if(receivers[hostname] && closed[hostname]) {
 							countReceivers[channel]--;
 							delete receivers[hostname];
 							delete lastDefers[hostname];
@@ -241,7 +241,7 @@ module.exports = function (context, io) {
 								}
 							}
 
-							logDesregistration(hostname, channel);
+							logDeregistration(hostname, channel);
 
 							io.sockets.emit('message', {
 								title: hostname,
