@@ -36,6 +36,17 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
     };
 
     $scope.setDefault = function(defaultCarst, channel) {
+
+      if(rePlaylist.test(defaultCarst)) {
+        var match = defaultCarst.match(rePlaylist);
+        var index = indexOfObject($scope.playlists, 'title', match[1]);
+        if(index === -1) {
+          alert("Diese Playlist gibt es nicht.");
+        } else {
+          defaultCarst = $scope.playlists[index];
+        }
+      }
+
       var data = {
         defaultCarst: defaultCarst,
         channel: channel
@@ -178,15 +189,15 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
           } else {
             handleCarst(input, channel, inputDuration);
           }
-        } /*else if(rePlaylist.test(input)) {
+        } else if(rePlaylist.test(input)) {
           match = input.match(rePlaylist);
           var index = indexOfObject($scope.playlists, 'title', match[1]);
           if(index === -1) {
             alert("Diese Playlist gibt es nicht.");
           } else {
-            alert(index + ' Schöne Playlist.');
+            $scope.play($scope.playlists[index]);
           }
-        } */else {
+        } else {
           handleCommand(input, channel);
         }
       }
@@ -233,13 +244,13 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
       showMessage(data.title, data.options);
     });
 
-   /* function indexOfObject(array, key, value) {
+   function indexOfObject(array, key, value) {
       for (var i = 0; i < array.length; i++) {
-        if (array[i][key]. === value) {
+        if (array[i][key].toLowerCase() === value.toLowerCase()) {
           return i;
         }
       }
       return -1;
-    }*/
+    }
 
   }]);
