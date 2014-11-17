@@ -1,6 +1,49 @@
 module.exports = function (context, io) {
 
-	var playlists = [
+	var playlists = [];
+
+	/*var playlistsSchema = context.mongoose.Schema({
+		title: String,
+		carsts: [{
+			id: Number,
+			title: String,
+			url: String,
+			time: Number,
+			timeString: String
+		}]
+	});
+
+	var testPlaylist = {
+		title: 'Node.js',
+		carsts: [
+			{
+				id: 0,
+				title: 'https://www.youtube.com/watch?v=ndKRjmA6WNA',
+				url: 'https://www.youtube.com/watch?v=ndKRjmA6WNA',
+				time: 20000,
+				timeString: '00:20'
+			},
+			{
+				id: 1,
+				title: 'https://www.youtube.com/watch?v=GJmFG4ffJZU',
+				url: 'https://www.youtube.com/watch?v=GJmFG4ffJZU',
+				time: 40000,
+				timeString: '00:40'
+			}
+		]
+	};
+
+	var PlaylistsModel = context.mongoose.model('Playlists', playlistsSchema);
+
+	PlaylistsModel.find(function(err, playlistsResults) {
+		playlists = playlistsResults;
+	});*/
+
+	/*PlaylistsModel.find(function(err, playlistsResults) {
+		playlists = playlistsResults;
+	});*/
+
+	/*var playlists = [
 		{
 			title: 'Node.js',
 			carsts: [
@@ -53,7 +96,7 @@ module.exports = function (context, io) {
 				}
 			]
 		}
-	];
+	];*/
 
 	var gID = 0;
 	var cID = 0;
@@ -81,6 +124,9 @@ module.exports = function (context, io) {
 		id : -2,
 		url : 'app://index'
 	};
+
+	var onDefault = false;
+
 	carsts[context.config.defaultChannel] = [];
 	commands[context.config.defaultChannel] = [];
 
@@ -215,6 +261,7 @@ module.exports = function (context, io) {
 			if(carsts[channel].length > 0 && carsts[channel][0].id !== lastDefers[hostname].carst) {
 				sendToReceiver(res, hostname, 'carst', carsts[channel][0]);
 			} else if(carsts[channel].length === 0 && lastDefers[hostname].carst !== -2) {
+				console.log(carsts[channel].length, lastDefers[hostname].carst, hostname);
 				sendToReceiver(res, hostname, 'carst', defaultCarst[channel]);
 			} else {
 				defers[channel].carst.push({receiver: hostname, respond : res});
@@ -290,10 +337,19 @@ module.exports = function (context, io) {
 	});
 
 	context.app.post('/rest/defaultCarst', function (req, res) {
-		defaultCarst[req.body.channel] = {
-			id : -2,
-			url : req.body.defaultCarst
-		};
+
+		var channel = req.body.channel;
+
+			defaultCarst[channel] = {
+				id : -2,
+				url : req.body.defaultCarst
+			};
+
+		console.log(defaultCarst[channel]);
+
+		if(carsts[channel].length === 0) {
+			sendToReceivers(channel, 'carst', defaultCarst[channel]);
+		}
 	});
 
 	context.app.get('/rest/playlists', function(req, res) {
