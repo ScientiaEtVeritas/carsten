@@ -1,8 +1,8 @@
 module.exports = function (context, io) {
 
-	var playlists = [];
+	var playlists;
 
-	/*var playlistsSchema = context.mongoose.Schema({
+	var playlistsSchema = context.mongoose.Schema({
 		title: String,
 		carsts: [{
 			id: Number,
@@ -37,7 +37,7 @@ module.exports = function (context, io) {
 
 	PlaylistsModel.find(function(err, playlistsResults) {
 		playlists = playlistsResults;
-	});*/
+	});
 
 	/*PlaylistsModel.find(function(err, playlistsResults) {
 		playlists = playlistsResults;

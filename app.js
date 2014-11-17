@@ -34,10 +34,10 @@ server.on('error', function(err) {
 
 console.log('\n*------ SERVER STARTED ------*');
 
-/*context.db = context.mongoose.connect(context.config.mongodb + context.config.database).connection;
+context.db = context.mongoose.connect(context.config.mongodb + context.config.database).connection;
 context.db.on('error', console.error.bind(console, 'connection error:'));
 context.db.once('open', function callback () {
-	console.log('\n*------ CONNECTED TO DATABASE ------*');*/
+	console.log('\n*------ CONNECTED TO DATABASE ------*');
 
 	//creat socket connection
 	var io = require('socket.io')(server);
@@ -63,4 +63,4 @@ context.db.once('open', function callback () {
 		}
 	});
 
-//});
+});
