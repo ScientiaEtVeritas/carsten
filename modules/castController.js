@@ -1,8 +1,8 @@
 module.exports = function (context, io) {
 
-	var playlists = [];
+	var playlists;
 
-	/*var playlistsSchema = context.mongoose.Schema({
+	var playlistsSchema = context.mongoose.Schema({
 		title: String,
 		carsts: [{
 			id: Number,
@@ -13,90 +13,12 @@ module.exports = function (context, io) {
 		}]
 	});
 
-	var testPlaylist = {
-		title: 'Node.js',
-		carsts: [
-			{
-				id: 0,
-				title: 'https://www.youtube.com/watch?v=ndKRjmA6WNA',
-				url: 'https://www.youtube.com/watch?v=ndKRjmA6WNA',
-				time: 20000,
-				timeString: '00:20'
-			},
-			{
-				id: 1,
-				title: 'https://www.youtube.com/watch?v=GJmFG4ffJZU',
-				url: 'https://www.youtube.com/watch?v=GJmFG4ffJZU',
-				time: 40000,
-				timeString: '00:40'
-			}
-		]
-	};
-
 	var PlaylistsModel = context.mongoose.model('Playlists', playlistsSchema);
 
 	PlaylistsModel.find(function(err, playlistsResults) {
 		playlists = playlistsResults;
-	});*/
-
-	/*PlaylistsModel.find(function(err, playlistsResults) {
-		playlists = playlistsResults;
-	});*/
-
-	/*var playlists = [
-		{
-			title: 'Node.js',
-			carsts: [
-				{
-					id: 0,
-					title: 'https://www.youtube.com/watch?v=ndKRjmA6WNA',
-					url: 'https://www.youtube.com/watch?v=ndKRjmA6WNA',
-					time: 20000,
-					timeString: '00:20'
-				},
-				{
-					id: 1,
-					title: 'https://www.youtube.com/watch?v=GJmFG4ffJZU',
-					url: 'https://www.youtube.com/watch?v=GJmFG4ffJZU',
-					time: 40000,
-					timeString: '00:40'
-				},
-				{
-					id: 2,
-					title: 'https://www.youtube.com/watch?v=GJmFG4ffJZU',
-					url: 'https://www.youtube.com/watch?v=GJmFG4ffJZU',
-					time: 40000,
-					timeString: '00:40'
-				},
-				{
-					id: 3,
-					title: 'https://www.youtube.com/watch?v=GJmFG4ffJZU',
-					url: 'https://www.youtube.com/watch?v=GJmFG4ffJZU',
-					time: 40000,
-					timeString: '00:40'
-				}
-			]
-		},
-		{
-			title: 'Node.js',
-			carsts: [
-				{
-					id: 0,
-					title: 'https://www.youtube.com/watch?v=ndKRjmA6WNA',
-					url: 'https://www.youtube.com/watch?v=ndKRjmA6WNA',
-					time: 20000,
-					timeString: '00:20'
-				},
-				{
-					id: 1,
-					title: 'https://www.youtube.com/watch?v=GJmFG4ffJZU',
-					url: 'https://www.youtube.com/watch?v=GJmFG4ffJZU',
-					time: 40000,
-					timeString: '00:40'
-				}
-			]
-		}
-	];*/
+		console.log('\n*------ ' + playlists.length + ' PLAYLIST(S) LOADED ------*');
+	});
 
 	var gID = 0;
 	var cID = 0;
@@ -212,8 +134,19 @@ module.exports = function (context, io) {
 			sendToReceivers(channel, 'carst', carsts[channel][0]);
 		}
 
-		res.send({});
+		res.end();
 		io.sockets.emit('update');
+	});
+
+	context.app.post('/rest/newPlaylist', function (req, res) {
+		console.log(req.body);
+		var newPlaylist = new PlaylistsModel(req.body);
+		newPlaylist.save(function(err, data) {
+			playlists.push(req.body);
+			console.log(err);
+			res.end();
+			io.sockets.emit('update');
+		});
 	});
 
 	context.app.post('/rest/command', function (req, res) {
@@ -353,7 +286,11 @@ module.exports = function (context, io) {
 	});
 
 	context.app.get('/rest/playlists', function(req, res) {
-		res.send(playlists);
+		PlaylistsModel.find(function(err, playlistsResults) {
+			playlists = playlistsResults;
+			console.log('\n*------ ' + playlists.length + ' PLAYLIST(S) LOADED ------*');
+			res.send(playlists);
+		});
 	});
 
 	context.app.get('/rest/channels', function (req, res) {
@@ -385,6 +322,14 @@ module.exports = function (context, io) {
 		res.end();
 	});
 
+	context.app.post('/remove/playlist/:index', function (req, res) {
+		console.log(req.params.index);
+		PlaylistsModel.remove( {"_id": req.params.index}, function() {
+			io.sockets.emit('update');
+			res.end('');
+		});
+	});
+
 	context.app.post('/rest/init', function(req, res) {
 		var channel = req.body.channel || context.config.defaultChannel;
 		var hostname = req.body.hostname;
@@ -395,7 +340,7 @@ module.exports = function (context, io) {
 
 			if(!lastDefers[hostname]) {
 				lastDefers[hostname] = {
-					command : -1,
+					command : commands[channel][commands[channel].length - 1] ? commands[channel][commands[channel].length - 1].id : -1,
 					carst : - 1
 				};
 			}

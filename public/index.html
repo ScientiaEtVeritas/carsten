@@ -76,7 +76,40 @@
 							</div>
 						</div>
 					</div>
-				<h3>Available Playlists</h3>
+				<!-- Modal -->
+				<div class="modal fade" id="addPlaylist" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+					<div class="modal-dialog modal-lg">
+						<div class="modal-content">
+							<div class="modal-header">
+								<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+								<h4 class="modal-title" id="myModalLabel">Add new playlist</h4>
+							</div>
+							<div class="modal-body" style="padding:20px 50px;">
+								<input id="playlistTitle" class="contenteditable" value="Title of your new playlist" />
+								<ul  class="list-group">
+									<div id="newPlaylist">
+										<li style="display: block;" class="list-group-item" ng-repeat="carst in newPlaylist">
+											<div style="outline:0; margin-top:10px !important;" id="newPlaylistCarstTime_{{$index}}"  class="badge" contenteditable="true">{{carst.timeString}}</div>
+											<input id="newPlaylistCarstUrl_{{$index}}" class="newCarst contenteditable" value="{{carst.url}}" />
+										</li>
+									</div>
+									<div style="cursor:pointer; display:inline-block; position: absolute; right:0; margin-right:50px; margin-top:8px;" ng-click="appendCarstToPlaylist()"> <span class="glyphicon glyphicon-plus"></span> Carst</div>
+								</ul>
+							</div>
+							<div class="modal-footer">
+								<div id="newPlaylistSuccess" class="alert alert-success" role="alert">Well done, the playlist was successfully added to the database!</div>
+								<div id="newPlaylistError" class="alert alert-danger" role="alert">Something is wrong! Please check your inputs!</div>
+								<button type="button" class="btn" data-dismiss="modal"><span class="glyphicon glyphicon-remove"></span> Close</button>
+								<button type="button" class="btn" ng-click="applyNewPlaylist()"><span class="glyphicon glyphicon-refresh"></span> Apply</button>
+								<button type="button" class="btn" ng-click="saveNewPlaylist()"><span class="glyphicon glyphicon-floppy-disk"></span> Save changes</button>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div style="position: relative;">
+					<h3>Available Playlists</h3>
+					<div style="position:absolute; cursor: pointer; font-size:24px; top:0; right:0; display:inline-block;" ng-click="resetPlaylist()" data-toggle="modal" data-target="#addPlaylist">Add <span class="glyphicon glyphicon-plus"></span></div>
+				</div>
 				<div ng-show="playlists.length == 0">
 					<li class="list-group-item">No playlists available.</li>
 				</div>
@@ -84,8 +117,11 @@
 					<div class="panel-body">
 						<div ng-repeat="playlist in playlists" ng-class="$index !== 0 ? 'borderTop' : ''" style="position: relative;">
 							<div style="margin:10px;">
-								<div><strong>{{ playlist.title }}</strong></div>
-								<div style="position:absolute; font-size:30px; right: 10px; display: inline-block; cursor: pointer; z-index:100;" ng-click="play(playlist)"><span class="glyphicon glyphicon-play"></span></div>
+								<div>
+									<div  style="display:inline;"><strong>{{ playlist.title }}</strong> </div>
+									<div style="position:absolute; right: 20px; display: inline-block; cursor: pointer;" ng-click="play(playlist)"><span class="glyphicon glyphicon-play"></span></div>
+									<div style="cursor:pointer; position:absolute; right:0; display:inline;" ng-click="removePlaylist($index)"><span class="glyphicon glyphicon-remove"></span></div>
+								</div>
 								<div ng-repeat="carst in playlist.carsts" style="position: relative;">
 									<div style="position:absolute; left:10px; display: inline-block; width:40px;">{{ carst.id }}</div>
 									<div style="margin-left:40px; display: inline-block;" ng-bind-html="carst.title | to_html"></div>

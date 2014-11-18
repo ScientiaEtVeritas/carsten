@@ -6,6 +6,14 @@ app.filter('to_html', ['$sce', function($sce){
 
 app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$window',
   function ($scope, $http, $rootScope, $location, $window) {
+
+    $scope.newPlaylist = [{
+      id: 0,
+      title: '',
+      url: 'sample carst',
+      time: '',
+      timeString: 'mm:ss'
+    }];
     
     $scope.input = '';
     $scope.inputDuration = '';
@@ -14,6 +22,8 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
     $scope.commands = [];
     $scope.countReceivers = [];
     $scope.playlists = [];
+
+    var playlistError = false;
 
     function showMessage(title, options) {
       if ("Notification" in $window) {
@@ -28,6 +38,123 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
         }
       }
     }
+
+    function formatTime(inputDuration) {
+      var match;
+      var resultTime;
+      var timeString;
+      if(reTime1.test(inputDuration)) {
+        match = inputDuration.match(reTime1);
+        resultTime = +match[1]*60000 + +match[2]*1000;
+      } else if(reTime2.test(inputDuration)) {
+        match = inputDuration.match(reTime2);
+        resultTime = +match[1]*60000 + +match[2]*1000;
+      } else if(reTime3.test(inputDuration)) {
+        match = inputDuration.match(reTime3);
+        resultTime = +match[1]*60000 + +match[2]*1000;
+      } else {
+        resultTime = 25000;
+      }
+
+      var min = Math.floor(resultTime/60000);
+      var sec = (resultTime - (min*60000))/1000;
+      timeString = ('0' + min).slice(-2) + ':' + ('0' + sec).slice(-2);
+
+      return {
+        resultTime: resultTime,
+        timeString: timeString
+      };
+    }
+
+    function getYouTubeTime(input, callback) {
+      var match = input.match(reYoutube);
+      $http.get('https://www.googleapis.com/youtube/v3/videos?id=' + match[7] + '&key=AIzaSyDjWgTEWP4-Wz3lgQjlXO-PJJ2DuHfbq9w&part=contentDetails,snippet').success(function(data) {
+        var title = '<span class="glyphicon glyphicon-facetime-video"></span> ' + data.items[0].snippet.title;
+        callback(input, data.items[0].contentDetails.duration, title);
+      });
+    }
+
+    $scope.resetPlaylist = function() {
+      $('#newPlaylistSuccess').hide();
+      $('#newPlaylistError').hide();
+    };
+
+    $scope.applyNewPlaylist = function() {
+      playlistError = false;
+      $('#newPlaylistSuccess').hide();
+      $('#newPlaylistError').hide();
+      $scope.newPlaylist.forEach(function(playlist, index) {
+
+        $scope.newPlaylist[index].url = playlist.url = $('#newPlaylistCarstUrl_' + index).val();
+        $scope.newPlaylist[index].timeString = playlist.timeString = $('#newPlaylistCarstTime_' + index).html();
+
+        if(!re.test(playlist.url)) {
+          $('#newPlaylistError').show();
+          playlistError = true;
+        }
+
+        if(reYoutube.test(playlist.url)) {
+          (function(index) {
+            getYouTubeTime(playlist.url, function(url, duration, title) {
+              var time = formatTime(duration);
+              playlist = {
+                id: index,
+                title: title,
+                url: playlist.url,
+                time: time.resultTime,
+                timeString: time.timeString
+              };
+              $scope.newPlaylist[index] = playlist;
+            });
+          }(index));
+
+        } else {
+          var time = formatTime($scope.newPlaylist[index].timeString);
+          playlist = {
+            id: index,
+            title: playlist.url,
+            url: playlist.url,
+            time: time.resultTime,
+            timeString: time.timeString
+          };
+          $scope.newPlaylist[index] = playlist;
+        }
+      });
+    };
+
+
+    $scope.saveNewPlaylist = function() {
+      $scope.applyNewPlaylist();
+      if(!playlistError) {
+        setTimeout(function() {
+        sendToServer('/rest/newPlaylist', {
+          title: $('#playlistTitle').val(),
+          carsts: $scope.newPlaylist
+        }, function() {
+          $('#newPlaylistSuccess').show();
+          $scope.newPlaylist = [{
+            id: 0,
+            title: '',
+            url: 'sample carst',
+            time: '',
+            timeString: 'mm:ss'
+          }];
+          $('#playlistTitle').val('Title of your new playlist');
+        }, function() {
+          $('#newPlaylistError').show();
+        });
+        }, 200);
+      }
+    };
+
+    $scope.appendCarstToPlaylist = function() {
+      $scope.newPlaylist.push({
+        title: '',
+        url: 'sample carst',
+        time: '',
+        timeString: 'mm:ss'
+      });
+    };
 
     $scope.setChannel = function(channel) {
       $scope.channel = channel;
@@ -113,12 +240,14 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
       }
     };
 
-    function sendToServer(type, data) {
+    function sendToServer(type, data, sucsb, errcb) {
       console.log(data);
       $http.post(type, data).success(function () {
         console.log('Sent to server successfully');
+        if(sucsb) sucsb();
       }).error(function (data, status, headers, config) {
         console.log('Sent to server failed');
+        if(errcb) errcb();
       });
     }
 
@@ -127,56 +256,34 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
       var input = $scope.input;
       var inputDuration = $scope.inputDuration;
       var channel = $scope.channel;
-      var match;
-      var resultTime;
 
       $scope.input = '';
       $scope.inputDuration = '';
 
-      function getYouTubeTime(input, channel, callback) {
-          match = input.match(reYoutube);
-          $http.get('https://www.googleapis.com/youtube/v3/videos?id=' + match[7] + '&key=AIzaSyDjWgTEWP4-Wz3lgQjlXO-PJJ2DuHfbq9w&part=contentDetails,snippet').success(function(data) {
-            var title = '<span class="glyphicon glyphicon-facetime-video"></span> ' + data.items[0].snippet.title;
-            callback(input, channel, data.items[0].contentDetails.duration, title);
-          });
-      }
-
-      function handleCommand(input, channel) {
+      function handleCommand(input) {
         var data = {
           command: input,
-          channel: channel
+          channel: $scope.channel
         };
         sendToServer('/rest/command', data);
         $scope.loadCommands();
       }
 
-      function handleCarst(input, channel, inputDuration, title) {
+      function handleCarst(input, inputDuration, title) {
         title = title || input;
-        var timeString;
-        if(reTime1.test(inputDuration)) {
-          match = inputDuration.match(reTime1);
-          resultTime = +match[1]*60000 + +match[2]*1000;
-        } else if(reTime2.test(inputDuration)) {
-          match = inputDuration.match(reTime2);
-          resultTime = +match[1]*60000 + +match[2]*1000;
-        } else if(reTime3.test(inputDuration)) {
-          match = inputDuration.match(reTime3);
-          resultTime = +match[1]*60000 + +match[2]*1000;
-        } else {
-          resultTime = 25000;
-        }
 
-        var min = Math.floor(resultTime/60000);
-        var sec = (resultTime - (min*60000))/1000;
-        timeString = ('0' + min).slice(-2) + ':' + ('0' + sec).slice(-2);
+        var time = formatTime(inputDuration);
 
         var data = {
           title: title,
           url: input,
-          channel: channel,
-          time: resultTime,
-          timeString: timeString
+          channel: $scope.channel,
+          time: time.resultTime,
+          timeString: time.timeString
         };
+
+        console.table(data);
+
         sendToServer('/rest/carst', data);
         $scope.loadCarsts();
       }
@@ -185,9 +292,9 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
       if(input.length > 0) {
         if (re.test(input)) {
           if(reYoutube.test(input)) {
-            getYouTubeTime(input, channel, handleCarst);
+            getYouTubeTime(input, handleCarst);
           } else {
-            handleCarst(input, channel, inputDuration);
+            handleCarst(input, inputDuration);
           }
         } else if(rePlaylist.test(input)) {
           match = input.match(rePlaylist);
@@ -200,6 +307,16 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
         } else {
           handleCommand(input, channel);
         }
+      }
+    };
+
+    $scope.removePlaylist = function(index) {
+      if(Number.isInteger(index)) {
+        $http.post('/remove/playlist/' + $scope.playlists[index]._id).success(function (data, status, headers, config) {
+          console.log('removed');
+        }).error(function (data, status, headers, config) {
+          console.log('Error removing.');
+        });
       }
     };
 
@@ -218,6 +335,7 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
     $scope.play = function(playlist) {
       playlist.carsts.forEach(function(carst) {
         carst.channel = $scope.channel;
+        console.log(carst);
         sendToServer('/rest/carst', carst);
       });
     };
@@ -233,6 +351,7 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
       $scope.loadCarsts();
       $scope.loadCommands();
       $scope.loadChannels();
+      $scope.loadPlaylists();
     });
 
     socket.on('message', function (data) {

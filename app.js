@@ -11,7 +11,7 @@ context.config     = require('./config');
 context.app        = express();
 context.sockets    = [];
 context.rest       = new require('node-rest-client').Client();
-//context.mongoose   = require('mongoose');
+context.mongoose   = require('mongoose');
 
 console.log('\n\n*------ CONFIGURATION ------*' +
 '\nPort: ', context.config.port +
@@ -34,10 +34,15 @@ server.on('error', function(err) {
 
 console.log('\n*------ SERVER STARTED ------*');
 
-/*context.db = context.mongoose.connect(context.config.mongodb + context.config.database).connection;
-context.db.on('error', console.error.bind(console, 'connection error:'));
+context.db = context.mongoose.connect(context.config.mongodb + context.config.database).connection;
+context.db.on('error', function(err) {
+	console.log('\n*------ DATABASE CONNECTION ERROR ------*');
+	console.log('\nMessage: ' + err);
+	process.exit(1);
+});
+
 context.db.once('open', function callback () {
-	console.log('\n*------ CONNECTED TO DATABASE ------*');*/
+	console.log('\n*------ CONNECTED TO DATABASE ------*');
 
 	//creat socket connection
 	var io = require('socket.io')(server);
@@ -63,4 +68,4 @@ context.db.once('open', function callback () {
 		}
 	});
 
-//});
+});
