@@ -2,6 +2,7 @@ var express    = require('express');
 var bodyParser = require('body-parser');
 var fs         = require('fs');
 var path       = require('path');
+var url           = require('url');
 
 
 //set context
@@ -20,6 +21,18 @@ console.log('\n\n   ██████╗ █████╗ ██████�
 '  ╚██████╗██║  ██║██║  ██║███████║   ██║   ███████╗██║ ╚████║\n'+
 '   ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝   ╚═╝   ╚══════╝╚═╝  ╚═══╝\n');
 
+if(context.http_proxy) {
+	context.http_options = {
+		hostname: url.parse(context.http_proxy).hostname,
+		port: url.parse(context.http_proxy).port,
+		path: context.http_proxy,
+		headers: {
+			Host: url.parse(context.http_proxy).hostname
+		}
+	};
+} else {
+	context.http_options = undefined;
+}
 
 console.log('\n*------ CONFIGURATION ------*' +
 '\nPort: ', context.config.port +
