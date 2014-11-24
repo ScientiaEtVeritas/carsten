@@ -17,6 +17,7 @@
     "mongoose": "^3.8.19",
     "node-rest-client": "^1.4.1",
     "node-uuid": "^1.4.1",
+    "qs": "^2.3.3",
     "socket.io": "~1.2.0"
   }
 }
