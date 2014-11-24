@@ -279,6 +279,7 @@ module.exports = function (context) {
 		context.plugins.some(function(plugin) {
 			if(plugin.app.expression.test(input)) {
 				plugin.app.fn({
+					http_options: context.http_options,
 					http: context.http,
 					https: require('https'),
 					match: input.match(plugin.app.expression),
@@ -343,6 +344,7 @@ module.exports = function (context) {
 
 	// calculate time of sockets input
 	function getTime(inputDuration) {
+		console.log(inputDuration);
 		var reTime1 = new RegExp("^([0-9]{1,2}):([0-9]{1,2})$", "i");
 		var reTime2 = new RegExp("^([0-9]{0,2})m ?([0-9]{0,2})s$", "i");
 		var reTime3 = new RegExp("^PT([0-9]{1,2})M([0-9]{1,2})S$", "i");
