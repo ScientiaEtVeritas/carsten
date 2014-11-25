@@ -21,18 +21,22 @@ console.log('\n\n   ██████╗ █████╗ ██████�
 '  ╚██████╗██║  ██║██║  ██║███████║   ██║   ███████╗██║ ╚████║\n'+
 '   ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝   ╚═╝   ╚══════╝╚═╝  ╚═══╝\n');
 
-if(context.http_proxy) {
-	context.http_options = {
-		hostname: url.parse(context.http_proxy).hostname,
-		port: url.parse(context.http_proxy).port,
-		path: context.http_proxy,
+console.log(context.config.http_proxy);
+
+if(context.config.http_proxy) {
+	context.config.http_options = {
+		hostname: url.parse(context.config.http_proxy).hostname,
+		port: url.parse(context.config.http_proxy).port,
+		path: context.config.http_proxy,
 		headers: {
-			Host: url.parse(context.http_proxy).hostname
+			Host: url.parse(context.config.http_proxy).hostname
 		}
 	};
 } else {
 	context.http_options = undefined;
 }
+
+console.log(context.config.http_options);
 
 console.log('\n*------ CONFIGURATION ------*' +
 '\nPort: ', context.config.port +

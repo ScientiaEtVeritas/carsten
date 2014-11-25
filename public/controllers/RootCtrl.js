@@ -7,6 +7,12 @@ app.filter('to_html', ['$sce', function($sce){
 app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$window',
   function ($scope, $http, $rootScope, $location, $window) {
 
+      $scope.showMore = function() {
+          $('#extended').toggle('slide', {direction:'up'}, 500);
+      };
+
+      $('#carst_input').focus();
+
       $('#l-carsts').sortable({
           placeholder: "carst-placeholder",
           start: function(event, ui) {
