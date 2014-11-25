@@ -5,6 +5,7 @@
         } else {
             result.http_options = 'https://www.googleapis.com/youtube/v3/videos?id=' + result.match[7] + '&key=AIzaSyAo5CYVQw-SkbyVeuDcaaGzX8jTLUUcO2M&part=contentDetails,snippet';
         }
+        console.log(result.http_options);
         result.https.get(result.http_options, function(res) {
             if(+res.statusCode === 200) {
                 var data = '';

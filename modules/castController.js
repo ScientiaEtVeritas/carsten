@@ -53,7 +53,7 @@ module.exports = function (context) {
 	channels[0] = context.config.defaultChannel; // initialize channels with default channel
 
 	var carsts = {}; // carst queue
-	var commands = []; // all commands
+	var commands = {}; // all commands
 
 	// initialze carsts and command for default channel
 	carsts[context.config.defaultChannel] = [];
@@ -74,11 +74,14 @@ module.exports = function (context) {
 
 	// all default carsts, for every channel
 	var defaultCarst = {};
+	var countPosDC = {};
+	countPosDC[context.config.defaultChannel] = 0;
 
 	// initialize default carst for default channel
 	defaultCarst[context.config.defaultChannel] = {
 		id : -2,
-		url : 'app://index'
+		url : 'app://index',
+		playlist: undefined
 	};
 
 	var currentTimeout; // reference to the timeout of the current carst
@@ -175,12 +178,16 @@ module.exports = function (context) {
 
 	// date object to mm/dd/yyyy - hh:mm
 	function formatDate(date) {
-		return (date.getMonth() + 1 + '/' + date.getDate() + '/' + date.getFullYear() + ' - ' + formatTime(date.getHours(), date.getMinutes()));
+		return (date.getMonth() + 1 + '/' + date.getDate() + '/' + date.getFullYear() + ' - ' + formatTime([date.getHours(), date.getMinutes()]));
 	}
 
-	// a, b to aa:bb
-	function formatTime(a, b) {
-		return ('0' + a).slice(-2) + ':' + ('0' + b).slice(-2);
+	// [a, b] to "aa:bb"
+	function formatTime(arr) {
+		var str = '';
+		arr.forEach(function(a, i) {
+			str += (i === 0 ? '' : ':') + ('0' + a).slice(-2);
+		});
+		return str;
 	}
 
 	// returns index of object by value of a key
@@ -251,8 +258,25 @@ module.exports = function (context) {
 		delete commands[channel];
 		delete defers[channel];
 		delete countReceivers[channel];
+		delete countPosDC[channel];
 		var pos = channels.indexOf(channel);
 		channels.splice(pos, 1);
+	}
+
+	// for playlists as default, handles timeouts etc.
+	function nextInDefault(channel) {
+		if(defaultCarst[channel].playlist.carsts.length <= countPosDC[channel]) {
+			countPosDC[channel] = 0;
+		}
+		defaultCarst[channel].playlist.carsts[countPosDC[channel]].id = -2;
+		sendToReceivers(channel, 'carst', defaultCarst[channel].playlist.carsts[countPosDC[channel]]);
+
+		setTimeout(function() {
+			if(carsts[channel].length === 0) {
+				nextInDefault(channel);
+			}
+		}, defaultCarst[channel].playlist.carsts[countPosDC[channel]].time);
+		countPosDC[channel]++;
 	}
 
 	// delete a carsts, remove it from the queue
@@ -263,7 +287,7 @@ module.exports = function (context) {
 			if(position === 0 && typeof carsts[channel][0] !== "undefined") {
 				sendToReceivers(channel, 'carst', carsts[channel][0]);
 			} else if(carsts[channel].length === 0) {
-				sendToReceivers(channel, 'carst', defaultCarst[channel]);
+				nextInDefault(channel);
 			}
 			updateSockets();
 		}
@@ -279,7 +303,7 @@ module.exports = function (context) {
 		context.plugins.some(function(plugin) {
 			if(plugin.app.expression.test(input)) {
 				plugin.app.fn({
-					http_options: context.http_options,
+					http_options: context.config.http_options,
 					http: context.http,
 					https: require('https'),
 					match: input.match(plugin.app.expression),
@@ -344,30 +368,23 @@ module.exports = function (context) {
 
 	// calculate time of sockets input
 	function getTime(inputDuration) {
-		console.log(inputDuration);
-		var reTime1 = new RegExp("^([0-9]{1,2}):([0-9]{1,2})$", "i");
-		var reTime2 = new RegExp("^([0-9]{0,2})m ?([0-9]{0,2})s$", "i");
-		var reTime3 = new RegExp("^PT([0-9]{1,2})M([0-9]{1,2})S$", "i");
+		var reTime = /^(?:PT)?(?:(?:(\d{1,2})[:.hH]))?(?:(\d{1,2})[:.mM])?(?:(\d{1,2})[sS]?)?$/;
 
 		var match;
 		var resultTime;
 		var timeString;
-		if(reTime1.test(inputDuration)) {
-			match = inputDuration.match(reTime1);
-			resultTime = +match[1]*60000 + +match[2]*1000;
-		} else if(reTime2.test(inputDuration)) {
-			match = inputDuration.match(reTime2);
-			resultTime = +match[1]*60000 + +match[2]*1000;
-		} else if(reTime3.test(inputDuration)) {
-			match = inputDuration.match(reTime3);
-			resultTime = +match[1]*60000 + +match[2]*1000;
-		} else {
-			resultTime = 25000;
+
+		if(reTime.test(inputDuration)) {
+			match = inputDuration.match(reTime);
+			resultTime = (match[1] && +match[1]*3600000 || 0) + (match[2] && +match[2]*60000 || 0) + (match[3] && +match[3]*1000 || 0);
 		}
 
-		var min = Math.floor(resultTime/60000);
+		resultTime = resultTime || 1800000;
+
+		var hrs = Math.floor(resultTime/3600000);
+		var min = Math.floor((resultTime - hrs*3600000)/60000);
 		var sec = (resultTime - (min*60000))/1000;
-		timeString = formatTime(min, sec);
+		timeString = formatTime([hrs, min, sec]);
 
 		return {
 			resultTime: resultTime,
@@ -409,14 +426,21 @@ module.exports = function (context) {
 	}
 
 	// playlist: validation, convert user input to common format
-	function handlePlaylist(data) {
+	function handlePlaylist(data, callback) {
 		var match = data.input.match(regExp.playlist);
-		var index = indexOfObject(playlists, 'title', match[1]);
+		var index;
+		if(match) {
+			index = indexOfObject(playlists, 'title', match[1]);
+		} else {
+			console.log('Not a valid playlist');
+			callback(undefined);
+		}
 		if(index === -1) {
 			console.log('Not a valid playlist');
+			callback(undefined);
 		} else {
 			console.log('A valid playlist');
-			addPlaylistToQueue(playlists[index], data.channel);
+			callback(playlists[index]);
 		}
 	}
 
@@ -492,7 +516,9 @@ module.exports = function (context) {
 			if(regExp.carst.test(data.input)) {
 				handleCast(data);
 			} else if(regExp.playlist.test(data.input)) {
-				handlePlaylist(data);
+				handlePlaylist(data, function(playlist) {
+					playlist && addPlaylistToQueue(playlist, data.channel);
+				});
 			} else {
 				handleCommand(data);
 			}
@@ -604,13 +630,22 @@ module.exports = function (context) {
 
 			defaultCarst[channel] = {
 				id : -2,
-				url : data.defaultCarst
+				url : data.defaultCarst,
+				playlist: undefined
 			};
-
 			if(carsts[channel].length === 0) {
-				sendToReceivers(channel, 'carst', defaultCarst[channel]);
+				handlePlaylist({
+					input: data.defaultCarst
+				}, function (playlist) {
+					if (playlist) {
+						defaultCarst[channel].playlist = JSON.parse(JSON.stringify(playlist));
+						console.log(defaultCarst);
+						nextInDefault(channel);
+					} else {
+						sendToReceivers(channel, 'carst', defaultCarst[channel]);
+					}
+				});
 			}
-
 			updateSockets();
 		});
 
@@ -704,8 +739,12 @@ module.exports = function (context) {
 			if(carsts[channel].length > 0 && carsts[channel][0].id !== lastDefers[hostname].carst) {
 				sendToReceiver(res, hostname, 'carst', carsts[channel][0]);
 			} else if(carsts[channel].length === 0 && lastDefers[hostname].carst !== -2) {
-				console.log(carsts[channel].length, lastDefers[hostname].carst, hostname);
-				sendToReceiver(res, hostname, 'carst', defaultCarst[channel]);
+				if(defaultCarst[channel].playlist) {
+					defaultCarst[channel].playlist.carsts[countPosDC[channel]-1].id = -2;
+					sendToReceiver(res, hostname, 'carst', defaultCarst[channel].playlist.carsts[countPosDC[channel]-1]);
+				} else {
+					sendToReceiver(res, hostname, 'carst', defaultCarst[channel]);
+				}
 			} else {
 				defers[channel].carst.push({receiver: hostname, respond : res});
 				// BUG: on CF this isn't fired
@@ -791,6 +830,10 @@ module.exports = function (context) {
 			}
 			if(!commands[channel]) {
 				commands[channel] = [];
+			}
+
+			if(!countPosDC[channel]) {
+				countPosDC[channel] = 0;
 			}
 
 
