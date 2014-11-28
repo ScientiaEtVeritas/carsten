@@ -46,10 +46,12 @@ console.log('\n*------ CONFIGURATION ------*' +
 '\nMongoDB: ', context.config.mongodb +
 '\nDatabase: ' + context.config.database + '\n');
 
+
 //create server
 var server = context.http.createServer(context.app);
 server.listen(context.config.port);
 server.timeout = 50000000;
+
 
 server.on('error', function(err) {
 	console.log('\n*------ SERVER ERROR ------*'  +
@@ -71,7 +73,7 @@ context.db.once('open', function callback () {
 
 	console.log('\n*------ LOAD PLUGINS ------*');
 
-	context.plugins = [{name:'youtube'}];
+	context.plugins = [{name:'youtube'}, {name:'vimeo'}];
 	context.pluginPath = './plugins';
 	context.consolePlugins = '';
 
