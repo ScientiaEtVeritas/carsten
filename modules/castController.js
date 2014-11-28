@@ -7,6 +7,25 @@ module.exports = function (context) {
 	/**********************************************************************************/
 	/**********************************************************************************/
 
+	// moongoose Schema for defaultCarst
+	var defaultCarstSchema = context.mongoose.Schema({
+		channel: String,
+		url: String,
+		id: Number,
+		playlist: {
+			title: String,
+			carsts: [{
+				id: Number,
+				title: String,
+				url: String,
+				time: Number,
+				timeString: String
+			}]
+		}
+	});
+
+	var DefaultCarstModel = context.mongoose.model('DefaultCarst', defaultCarstSchema);
+
 	var events = {}; // all events, for all channels
 	events[context.config.defaultChannel] = []; // initialize event array for default channel
 	var eventTimeouts = {}; // all timeouts of all events, indentified through _id property
@@ -76,10 +95,12 @@ module.exports = function (context) {
 	var defaultCarst = {};
 	var countPosDC = {};
 	countPosDC[context.config.defaultChannel] = 0;
+	var defaultCarstStatus = {};
 
 	// initialize default carst for default channel
 	defaultCarst[context.config.defaultChannel] = {
 		id : -2,
+		channel: context.config.defaultChannel,
 		url : 'app://index',
 		playlist: undefined
 	};
@@ -97,6 +118,23 @@ module.exports = function (context) {
 	/**********************************************************************************/
 	/**********************************************************************************/
 	/**********************************************************************************/
+
+	/**************************************************************/
+	/********************* FOR DEFAULT CARSTS *********************/
+	/**************************************************************/
+
+	DefaultCarstModel.find(function(err, dcResults) {
+		dcResults.forEach(function(defaultCarstRes) {
+			console.log("DEFAULT CARST FOR " + defaultCarstRes.channel + " IS " + defaultCarstRes.url);
+			var channel = defaultCarstRes.channel;
+			defaultCarst[channel] = defaultCarstRes;
+			defaultCarstStatus[channel] = {
+				status: false,
+				timeout: undefined
+			};
+		});
+		console.log("\n*-------- " + dcResults.length + " DEFAULT CARST(S) LOADED --------*\n");
+	});
 
 	/**************************************************************/
 	/************************* FOR EVENTS *************************/
@@ -181,7 +219,7 @@ module.exports = function (context) {
 		return (date.getMonth() + 1 + '/' + date.getDate() + '/' + date.getFullYear() + ' - ' + formatTime([date.getHours(), date.getMinutes()]));
 	}
 
-	// [a, b] to "aa:bb"
+	// [a, b, ... z] to "aa:bb: ... zz"
 	function formatTime(arr) {
 		var str = '';
 		arr.forEach(function(a, i) {
@@ -192,9 +230,11 @@ module.exports = function (context) {
 
 	// returns index of object by value of a key
 	function indexOfObject(array, key, value) {
-		for (var i = 0; i < array.length; i++) {
-			if (array[i][key].toString().toLowerCase() === value.toString().toLowerCase()) {
-				return i;
+		if(array) {
+			for (var i = 0; i < array.length; i++) {
+				if (array[i] && array[i][key] && array[i][key].toString().toLowerCase() === value.toString().toLowerCase()) {
+					return i;
+				}
 			}
 		}
 		return -1;
@@ -202,7 +242,7 @@ module.exports = function (context) {
 
 	// returns true or false depending if parameter is integer or not
 	Number.isInteger = Number.isInteger || function(int) {
-		return (Math.floor(int) == int);
+		return (Math.floor(int) === int);
 	};
 
 	/**************************************************************/
@@ -265,19 +305,32 @@ module.exports = function (context) {
 
 	// for playlists as default, handles timeouts etc.
 	function nextInDefault(channel) {
-		if(defaultCarst[channel].playlist.carsts.length <= countPosDC[channel]) {
-			countPosDC[channel] = 0;
-		}
-		defaultCarst[channel].playlist.carsts[countPosDC[channel]].id = -2;
-		sendToReceivers(channel, 'carst', defaultCarst[channel].playlist.carsts[countPosDC[channel]]);
-
-		setTimeout(function() {
-			if(carsts[channel].length === 0) {
-				nextInDefault(channel);
+		if(defaultCarstStatus[channel].status && defaultCarst[channel].playlist) {
+			if(defaultCarst[channel].playlist.carsts.length <= countPosDC[channel]) {
+				countPosDC[channel] = 0;
 			}
-		}, defaultCarst[channel].playlist.carsts[countPosDC[channel]].time);
-		countPosDC[channel]++;
+			defaultCarst[channel].playlist.carsts[countPosDC[channel]].id = -2;
+			sendToReceivers(channel, 'carst', defaultCarst[channel].playlist.carsts[countPosDC[channel]]);
+
+			defaultCarstStatus[channel].timeout = setTimeout(function() {
+				if(carsts[channel].length === 0) {
+					nextInDefault(channel);
+				}
+			}, defaultCarst[channel].playlist.carsts[countPosDC[channel]].time);
+			countPosDC[channel]++;
+		}
 	}
+
+	// send default carst to receivers
+	function sendDefault(channel) {
+		defaultCarstStatus[channel].status = true;
+		if(defaultCarst[channel].playlist && defaultCarst[channel].playlist != 'null') {
+			nextInDefault(channel);
+		} else {
+			sendToReceivers(channel, 'carst', defaultCarst[channel]);
+		}
+	}
+
 
 	// delete a carsts, remove it from the queue
 	function deleteCarst(channel, id) {
@@ -287,7 +340,7 @@ module.exports = function (context) {
 			if(position === 0 && typeof carsts[channel][0] !== "undefined") {
 				sendToReceivers(channel, 'carst', carsts[channel][0]);
 			} else if(carsts[channel].length === 0) {
-				nextInDefault(channel);
+				sendDefault(channel);
 			}
 			updateSockets();
 		}
@@ -353,6 +406,23 @@ module.exports = function (context) {
 		});
 	}
 
+	function unshiftPlaylist(playlist, channel) {
+		playlist = JSON.parse(JSON.stringify(playlist));
+		playlist.carsts.reverse().forEach(function(carst) {
+			carst.channel = channel;
+			unshiftCarst(carst);
+		});
+	}
+
+	function unshiftCarst(carst) {
+		gID++;
+		carst.id = gID;
+		clearTimeout(currentTimeout);
+		carsts[carst.channel].unshift(carst);
+		sendToReceivers(carst.channel, 'carst', carsts[carst.channel][0]);
+		updateSockets();
+	}
+
 	// add a specific carst to carsts queue
 	function addCarstToQueue(carst) {
 		//Channelangabe überdenken
@@ -361,6 +431,8 @@ module.exports = function (context) {
 		var channel = carst.channel;
 		carsts[channel].push(carst);
 		if(carsts[channel][0] === carst) {
+			defaultCarstStatus[channel].status = false;
+			clearTimeout(defaultCarstStatus[channel].timeout);
 			sendToReceivers(channel, 'carst', carsts[channel][0]);
 		}
 		updateSockets();
@@ -368,7 +440,7 @@ module.exports = function (context) {
 
 	// calculate time of sockets input
 	function getTime(inputDuration) {
-		var reTime = /^(?:PT)?(?:(?:(\d{1,2})[:.hH]))?(?:(\d{1,2})[:.mM])?(?:(\d{1,2})[sS]?)?$/;
+		var reTime = /^(?:PT)?(?:(\d{1,2})[:.hH])?(?:(\d{1,4})[:.mM])?(?:(\d{1,6})[sS]?)?$/;
 
 		var match;
 		var resultTime;
@@ -472,6 +544,9 @@ module.exports = function (context) {
 
 	// send a carst/command to all receivers
 	function sendToReceivers(channel, type, obj) {
+		if(carsts[channel].length !== 0) {
+			defaultCarstStatus[channel].status = false;
+		}
 		if(defers[channel] && defers[channel][type]) {
 			defers[channel][type].forEach(function(defer) {
 				logSending(defer.receiver, type, obj, 'sendToReceivers', channel);
@@ -525,6 +600,44 @@ module.exports = function (context) {
 		});
 
 		/**************************************************************/
+		/********************** CARST INPUT NOW ***********************/
+		/**************************************************************/
+
+		socket.on('carstNow', function(data) {
+			if(regExp.carst.test(data.input)) {
+					processCarst(data.input, data.inputDuration,data.channel, function(carst) {
+						unshiftCarst(carst);
+					});
+			} else if(regExp.playlist.test(data.input)) {
+				handlePlaylist(data, function(playlist) {
+					playlist && unshiftPlaylist(playlist, data.channel);
+				});
+			} else {
+				handleCommand(data);
+			}
+		});
+
+		/**************************************************************/
+		/************************** NEW FILE **************************/
+		/**************************************************************/
+
+		socket.on('newImage', function(data) {
+			var name = data.name;
+			var type = data.type;
+			var binary = data.data;
+			var fs = require('fs');
+			fs.open("./uploads/" + name, 'w+', 0755, function(err, fd) {
+				if (err) throw err;
+
+				fs.write(fd, binary, null, 'Binary', function(err, written, buff) {
+					fs.close(fd, function() {
+						processCarst('http://localhost:3000/image/' + name , data.duration,  data.channel, addCarstToQueue);
+					});
+				});
+			});
+		});
+
+		/**************************************************************/
 		/*********** CHANGE POSITION OF SPECIFIC CARST ****************/
 		/**************************************************************/
 
@@ -535,13 +648,39 @@ module.exports = function (context) {
 
 			if(oldPos !== newPos) {
 				var tmp = JSON.parse(JSON.stringify(carsts[channel][oldPos]));
-				carsts[channel][oldPos] = carsts[channel][newPos];
-				carsts[channel][newPos] = tmp;
-				if(newPos === 0) {
+				carsts[channel].splice(oldPos, 1);
+				carsts[channel].splice(newPos, 0, tmp);
+				tmp = null;
+				if(newPos === 0 || oldPos === 0) {
 					clearTimeout(currentTimeout);
 					sendToReceivers(channel, 'carst', carsts[channel][0]);
 				}
 				updateSockets();
+			}
+		});
+
+		/**************************************************************/
+		/********************* DELETE WHOLE QUEUE *********************/
+		/**************************************************************/
+
+		socket.on('clearQueue', function(data) {
+			var channel = data.channel;
+			if(carsts[channel].length > 0) {
+				carsts[channel] = [];
+				sendDefault(channel);
+				updateSockets();
+			}
+		});
+
+		/**************************************************************/
+		/*********************** RESET FIRST CARST ********************/
+		/**************************************************************/
+
+		socket.on('setBack', function(data) {
+			var channel = data.channel;
+			if(carsts[channel].length > 0) {
+				clearTimeout(currentTimeout);
+				sendToReceivers(channel, 'carst', carsts[channel][0]);
 			}
 		});
 
@@ -567,33 +706,54 @@ module.exports = function (context) {
 		/************************ NEW PLAYLIST ************************/
 		/**************************************************************/
 
-		socket.on('newPlaylist', function(data) {
+		socket.on('openPlaylist', function(data) {
 
 			var error = false;
 			var playlist = {};
 			playlist.carsts = [];
 			playlist.title = data.title;
-
+			if(data._id) {
+				playlist._id = data._id;
+			}
 			data.carsts.some(function(carst, index) {
 				if(!regExp.carst.test(carst.url)) {
-					socket.emit('newPlaylistError');
+					socket.emit('openPlaylistError');
 					return true;
 				} else {
 					processCarst(carst.url, carst.timeString, '', function(carst) {
 						carst.id = index;
-						playlist.carsts.push(carst);
+						playlist.carsts[index] = carst;
 						if(playlist.carsts.length === data.carsts.length) {
-							playlist = new PlaylistsModel(playlist);
-							playlist.save(function(err, data) {
-								if(!err) {
-									playlists.push(playlist);
-									console.log('\n*------ PLAYLIST ADDED TO DATABASE ------*');
-									socket.emit('newPlaylistSuccess');
-								} else {
-									socket.emit('newPlaylistError');
-								}
-								updateSockets();
-							});
+							if(!data._id || data._id == null) {
+								playlist = new PlaylistsModel(playlist);
+								playlist.save(function(err, data) {
+									if(!err) {
+										playlists.push(data);
+										console.log('\n*------ PLAYLIST ADDED TO DATABASE ------*');
+										socket.emit('openPlaylistSuccess');
+										updateSockets();
+									} else {
+										console.log(err);
+										socket.emit('openPlaylistError');
+									}
+								});
+							} else {
+								PlaylistsModel.findOneAndUpdate({_id:data._id}, playlist, function(err, data) {
+									if(!err) {
+										var pos = indexOfObject(playlists, '_id', data._id);
+										if(pos !== - 1) {
+											playlists.splice(pos, 1);
+										}
+										playlists.push(playlist);
+										console.log('\n*------ PLAYLIST UPDATED IN DATABASE ------*');
+										socket.emit('openPlaylistSuccess');
+										updateSockets();
+									} else {
+										console.log(err);
+										socket.emit('openPlaylistError');
+									}
+								});
+							}
 						}
 					});
 				}
@@ -630,6 +790,7 @@ module.exports = function (context) {
 
 			defaultCarst[channel] = {
 				id : -2,
+				channel: channel,
 				url : data.defaultCarst,
 				playlist: undefined
 			};
@@ -637,16 +798,29 @@ module.exports = function (context) {
 				handlePlaylist({
 					input: data.defaultCarst
 				}, function (playlist) {
+					clearTimeout(defaultCarstStatus[channel].timeout);
+					countPosDC[channel] = 0;
 					if (playlist) {
 						defaultCarst[channel].playlist = JSON.parse(JSON.stringify(playlist));
-						console.log(defaultCarst);
 						nextInDefault(channel);
 					} else {
+						defaultCarstStatus[channel].status = false;
 						sendToReceivers(channel, 'carst', defaultCarst[channel]);
 					}
+
+					defaultCarst[channel].channel = channel;
+					//var defaultCarstTmp = new DefaultCarstModel(defaultCarst[channel]);
+					DefaultCarstModel.findOneAndUpdate({channel:channel}, defaultCarst[channel], {upsert: true}, function(err, data) {
+						if(!err) {
+							console.log('\n*------ DEFAULT CARST ADDED TO DATABASE ------*');
+						} else {
+							console.log(err);
+							// error
+						}
+						updateSockets();
+					});
 				});
 			}
-			updateSockets();
 		});
 
 		/**************************************************************/
@@ -696,7 +870,6 @@ module.exports = function (context) {
 			if(pos !== -1) {
 				events[data.channel].splice(pos, 1);
 				EventsModel.remove( {"_id": data.index}, function(err) {
-					console.log(eventTimeouts);
 					if(err) {
 						// error
 					} else {
@@ -729,6 +902,15 @@ module.exports = function (context) {
 	/**********************************************************************************/
 	/**********************************************************************************/
 
+	context.app.get('/image/:filename', function(req, res) {
+		var filename = req.params.filename;
+		res.sendFile(require('path').resolve(__dirname, '../uploads/' + filename));
+	});
+
+	//context.app.get('/index', function(req, res) {
+	//	res.sendFile(require('path').resolve(__dirname, '../public/apps/index/index.html'));
+	//});
+
 	// a receiver requestes a carst
 	context.app.get('/rest/carst/:hostname', function (req, res) {
 		var carst = {};
@@ -739,7 +921,7 @@ module.exports = function (context) {
 			if(carsts[channel].length > 0 && carsts[channel][0].id !== lastDefers[hostname].carst) {
 				sendToReceiver(res, hostname, 'carst', carsts[channel][0]);
 			} else if(carsts[channel].length === 0 && lastDefers[hostname].carst !== -2) {
-				if(defaultCarst[channel].playlist) {
+				if(defaultCarst[channel].playlist && defaultCarst[channel].playlist != 'null' && defaultCarstStatus[channel].status) {
 					defaultCarst[channel].playlist.carsts[countPosDC[channel]-1].id = -2;
 					sendToReceiver(res, hostname, 'carst', defaultCarst[channel].playlist.carsts[countPosDC[channel]-1]);
 				} else {
@@ -805,6 +987,16 @@ module.exports = function (context) {
 		}
 	});
 
+	context.app.post('/rest/carst', function(req, res) {
+		var data = req.body;
+		if(regExp.carst.test(data.input)) {
+			handleCast(data);
+			res.end('You successfully send this tab to Carsten.');
+		} else {
+			res.end('Ooops! Something went wrong!');
+		}
+	});
+
 	// registration of a receiver
 	context.app.post('/rest/init', function(req, res) {
 		var channel = req.body.channel || context.config.defaultChannel;
@@ -813,13 +1005,6 @@ module.exports = function (context) {
 		if(hostname && hostname.length > 3 && !receivers[hostname]) {
 
 			logRegistration(hostname, channel);
-
-			if(!lastDefers[hostname]) {
-				lastDefers[hostname] = {
-					command : commands[channel][commands[channel].length - 1] ? commands[channel][commands[channel].length - 1].id : -1,
-					carst : - 1
-				};
-			}
 
 			if(channels.indexOf(channel) === -1) {
 				channels.push(channel);
@@ -832,8 +1017,35 @@ module.exports = function (context) {
 				commands[channel] = [];
 			}
 
+			if(!lastDefers[hostname]) {
+				lastDefers[hostname] = {
+					command : commands[channel][commands[channel].length - 1] ? commands[channel][commands[channel].length - 1].id : -1,
+					carst : - 1
+				};
+			}
+
+			if(!defaultCarst[channel]) {
+				defaultCarst[channel] = {
+					id : -2,
+					channel: channel,
+					url : 'app://index',
+					playlist: undefined
+				};
+			}
+
+			if(!defaultCarstStatus[channel]) {
+				defaultCarstStatus[channel] = {};
+				defaultCarstStatus[channel].status = false;
+				defaultCarstStatus[channel].timeout = undefined;
+			}
+
 			if(!countPosDC[channel]) {
 				countPosDC[channel] = 0;
+			}
+
+			if(defaultCarst[channel].playlist && defaultCarst[channel].playlist != 'null' && !defaultCarstStatus[channel].status) {
+				defaultCarstStatus[channel].status = true;
+				nextInDefault(channel);
 			}
 
 
@@ -850,6 +1062,10 @@ module.exports = function (context) {
 					command : [],
 					carst : []
 				};
+			}
+
+			if(!events[channel]) {
+				events[channel] = [];
 			}
 
 			closed[hostname] = false;

@@ -55,21 +55,31 @@
                    ng-keyup="inputKeyup($event)" class="form-control" placeholder="Enter something :)">
 
             <div style="position:absolute; left:0; top:60px;">Options: <input type="text"
-                                                                              style="width:70px; display:inline-block;"
+                                                                              style="width:87px; display:inline-block;"
                                                                               ng-model="inputDuration"
                                                                               ng-keyup="inputKeyup($event)"
-                                                                              class="form-control" placeholder="mm:ss">
+                                                                              class="form-control" placeholder="hh:mm:ss" />
+                <button style="margin-left:10px; margin-top:-5px;" type="button" class="btn" ng-click="openFileDialoag()"><span class="glyphicon glyphicon-camera"></span> Upload an image</button>
+                <input style="visibility: hidden;" id="imagefile" type="file" />
             </div>
+            <button style="position:absolute; right:170px; top:60px;" type="button" class="btn"
+                    ng-click="carst(true)">
+                <span class="glyphicon glyphicon-play"></span> Play Now</button>
             <button style="position:absolute; right:0; top:60px;" type="button" class="btn"
-                    ng-click="carst(input, channel, inputDuration)">
-                <span class="glyphicon glyphicon-transfer"></span> Send to {{countReceivers[channel] > 1 ?
-                countReceivers[channel] + ' receivers' : (countReceivers[channel] == 1 ? countReceivers[channel] + '
-                receiver' : 'nobody')}}
-            </button>
+                    ng-click="carst(false)">
+                <span class="glyphicon glyphicon-tasks"></span> Append to Queue</button>
         </div>
         <br/><br/><br/><br/><br/><br/>
+            <div style="position: relative;">
+                    <h3>Carsts <small>on {{channel}} for {{countReceivers[channel] > 1 ? countReceivers[channel] + ' receivers' : (countReceivers[channel] == 1 ? countReceivers[channel] + ' receiver' : 'nobody')}}</small></h3>
 
-        <h3>Carsts</h3>
+                    <div id="toggleMaximize" style="position:absolute; cursor: pointer; font-size:24px; top:0; right:0; display:inline-block;"
+                         ng-click="maximize()"><span class="glyphicon glyphicon-fullscreen"></span></div>
+                     <div style="position:absolute; cursor: pointer; font-size:24px; top:0; right:40px; display:inline-block;"
+                     ng-click="setBack()"><span class="glyphicon glyphicon-refresh"></span></div>
+                <div style="position:absolute; cursor: pointer; font-size:24px; top:0; right:80px; display:inline-block;"
+                     ng-click="clearQueue()"><span class="glyphicon glyphicon-trash"></span></div>
+            </div>
 
         <div ng-show="carsts[channel].length == 0">
             <li class="list-group-item">No casts available.</li>
@@ -83,20 +93,18 @@
                         </div>
                         <div style="position:absolute; left:60px; top:2px; display: inline-block;"
                              ng-bind-html="carst.title | to_html"></div>
-                        <div style="position:absolute; right:150px; top:2px; display: inline-block;">{{ carst.timeString
+                        <div style="position:absolute; right:50px; top:2px; display: inline-block;">{{ carst.timeString
                             }}
                         </div>
-                        <div style="position:absolute; right:20px; top:-5px; display: inline-block; width:80px;">
-                            <button type="button" class="btn" ng-click="deleteCarst(carst, channel)"><span
-                                    class="glyphicon glyphicon-remove"></span> Delete
-                            </button>
+                        <div style="position:absolute; right:5px; top:3px; display: inline-block; cursor:pointer; width:10px;">
+                            <span ng-click="deleteCarst(carst, channel)" class="glyphicon glyphicon-remove"></span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
         <br />
-        <button class="btn" ng-click="showMore()"><span class="glyphicon glyphicon-chevron-down"></span> Show more...</button>
+        <button id="more_button" class="btn" ng-click="showMore()"><span class="glyphicon glyphicon-chevron-down"></span> Show more...</button>
         <div id="extended" style="display:none;">
         <h3>Default carst</h3>
 
@@ -111,26 +119,28 @@
             </button>
         </div>
         <!-- Modal -->
-        <div class="modal fade" id="addPlaylist" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+        <div class="modal fade" id="openPlaylistModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
              aria-hidden="true">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
                     <div class="modal-header">
                         <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span
                                 class="sr-only">Close</span></button>
-                        <h4 class="modal-title" id="myModalLabel">Add new playlist</h4>
+                        <h4 class="modal-title" id="myModalLabel">Your playlist</h4>
                     </div>
                     <div class="modal-body" style="padding:20px 50px;">
-                        <input id="playlistTitle" class="contenteditable" value="Title of your new playlist"/>
+                        <input id="playlistTitle" class="contenteditable" ng-model="openPlaylist.title"/>
                         <ul class="list-group">
-                            <div id="newPlaylist">
-                                <li style="display: block;" class="list-group-item" ng-repeat="carst in newPlaylist">
-                                    <div style="outline:0; margin-top:15px !important;"
-                                         id="newPlaylistCarstTime_{{$index}}" class="badge editcolor"
-                                         contenteditable="true">{{carst.timeString}}
+                            <div id="openPlaylist">
+                                <li style="display: block;" class="list-group-item" ng-repeat="carst in openPlaylist.carsts">
+                                    <span ng-bind-html="openPlaylist.carsts[$index].title | to_html"></span>
+                                    <input type="text" style="position:absolute; right:40px; top:0px; bottom:0; height:35px; width:66px; display:inline-block; outline:0; margin:auto;"
+                                           class="contenteditable" ng-model="openPlaylist.carsts[$index].timeString" />
+                                    <input style="display:inline-block;" class="newCarst contenteditable"
+                                           ng-model="openPlaylist.carsts[$index].url" />
+                                    <div style="cursor:pointer; position:absolute; right:10px; top:22px; display:inline-block;"
+                                         ng-click="removeCarstFromPlaylist($index)"><span class="glyphicon glyphicon-remove"></span>
                                     </div>
-                                    <input id="newPlaylistCarstUrl_{{$index}}" class="newCarst contenteditable"
-                                           value="{{carst.url}}"/>
                                 </li>
                             </div>
                             <div style="cursor:pointer; display:inline-block; position: absolute; right:0; margin-right:50px; margin-top:8px;"
@@ -148,7 +158,7 @@
                         <button type="button" class="btn" data-dismiss="modal"><span
                                 class="glyphicon glyphicon-remove"></span> Close
                         </button>
-                        <button type="button" class="btn" ng-click="saveNewPlaylist()"><span
+                        <button type="button" class="btn" ng-click="savePlaylist()"><span
                                 class="glyphicon glyphicon-floppy-disk"></span> Save changes
                         </button>
                     </div>
@@ -159,7 +169,7 @@
             <h3>Available Playlists</h3>
 
             <div style="position:absolute; cursor: pointer; font-size:24px; top:0; right:0; display:inline-block;"
-                 ng-click="resetPlaylist()" data-toggle="modal" data-target="#addPlaylist">Add <span
+                 ng-click="resetPlaylist()" data-toggle="modal" data-target="#openPlaylistModal"><span
                     class="glyphicon glyphicon-plus"></span></div>
         </div>
         <div ng-show="playlists.length == 0">
@@ -171,14 +181,16 @@
                      style="position: relative;">
                     <div style="margin:10px;">
                         <div>
-                            <div style="display:inline;"><strong>{{ playlist.title }}</strong></div>
-                            <div style="position:absolute; right: 20px; display: inline-block; cursor: pointer;"
+                            <div style="display:inline; font-size:1.2em;"><strong>{{ playlist.title }}</strong></div>
+                            <div style="position:absolute; right: 40px; display: inline-block; cursor: pointer;"
                                  ng-click="play($index)"><span class="glyphicon glyphicon-play"></span></div>
+                            <div style="position:absolute; right: 20px; display: inline-block; cursor: pointer;"
+                                 data-toggle="modal" data-target="#openPlaylistModal" ng-click="editPlaylist($index)"><span class="glyphicon glyphicon-pencil"></span></div>
                             <div style="cursor:pointer; position:absolute; right:0; display:inline;"
                                  ng-click="removePlaylist($index)"><span class="glyphicon glyphicon-remove"></span>
                             </div>
                         </div>
-                        <div ng-repeat="carst in playlist.carsts" style="position: relative;">
+                        <div ng-repeat="carst in playlist.carsts" style="position: relative; margin-top:6px;">
                             <div style="position:absolute; left:10px; display: inline-block; width:40px;">{{ carst.id
                                 }}
                             </div>
@@ -199,14 +211,14 @@
             <h5 ng-if="different != 0">The difference to your time zone amounts to {{different}} hour(s)</h5>
 
             <div style="position:absolute; cursor: pointer; font-size:24px; top:0; right:0; display:inline-block;"
-                 ng-click="addEvent()">Add <span class="glyphicon glyphicon-plus"></span></div>
+                 ng-click="addEvent()"><span class="glyphicon glyphicon-plus"></span></div>
         </div>
         <div ng-show="events[channel].length == 0">
             <li class="list-group-item">No events available.
-                <div id="newEventSuccess" style="margin-top:15px;" class="alert alert-success" role="alert">Well done,
+                <div ng-if="addEventStatus && events[channel].length == 0" id="newEventSuccess" style="margin-top:15px;" class="alert alert-success" role="alert">Well done,
                     the event was successfully added to the database!
                 </div>
-                <div id="newEventError" style="margin-top:15px;" class="alert alert-danger" role="alert">Something is
+                <div ng-if="addEventStatus && events[channel].length == 0" id="newEventError" style="margin-top:15px;" class="alert alert-danger" role="alert">Something is
                     wrong! Please check your inputs!
                 </div>
                 <div ng-if="addEventStatus && events[channel].length == 0" style="height:60px;">
@@ -239,7 +251,7 @@
         </div>
         <div ng-show="events[channel].length > 0" class="panel panel-default">
             <div class="panel-body">
-                <div ng-repeat="event in events[channel]" style="height:45px;"
+                <div ng-repeat="event in events[channel] | orderBy:['eventHour','eventMin']" style="height:45px;"
                      ng-class="$index !== 0 ? 'borderTop' : ''">
                     <div style="position: relative;">
                         <div style="position:absolute; left:10px; top:12px; display: inline-block; border-right:1px solid #cccccc; width:40px;">
@@ -247,24 +259,22 @@
                         </div>
                         <div style="position:absolute; left:60px; top:12px; display: inline-block;"
                              ng-bind-html="event.eventCarst.title | to_html"></div>
-                        <div style="position:absolute; right:210px; top:12px; display: inline-block;">{{ ('0' +
+                        <div style="position:absolute; right:150px; top:12px; display: inline-block;">{{ ('0' +
                             event.eventHour).slice(-2) + ':' + ('0' + event.eventMin).slice(-2) }}
                             <small>o'clock</small>
                         </div>
-                        <div style="position:absolute; right:130px; top:12px; display: inline-block;">{{
+                        <div style="position:absolute; right:50px; top:12px; display: inline-block;">{{
                             event.eventCarst.timeString }}
                         </div>
-                        <div style="position:absolute; right:20px; top:6px; display: inline-block; width:80px;">
-                            <button type="button" class="btn" ng-click="removeEvent($index)"><span
-                                    class="glyphicon glyphicon-remove"></span> Delete
-                            </button>
+                        <div style="cursor:pointer; position:absolute; right:5px; top:12px; display: inline-block; width:10px;">
+                            <span ng-click="removeEvent($index)" class="glyphicon glyphicon-remove"></span>
                         </div>
                     </div>
                 </div>
-                <div id="newEventSuccess" style="margin-top:15px;" class="alert alert-success" role="alert">Well done,
+                <div ng-if="addEventStatus && events[channel].length > 0" id="newEventSuccess" style="margin-top:15px;" class="alert alert-success" role="alert">Well done,
                     the event was successfully added to the database!
                 </div>
-                <div id="newEventError" style="margin-top:15px;" class="alert alert-danger" role="alert">Something is
+                <div ng-if="addEventStatus && events[channel].length > 0" id="newEventError" style="margin-top:15px;" class="alert alert-danger" role="alert">Something is
                     wrong! Please check your inputs!
                 </div>
                 <div ng-if="addEventStatus" style="height:60px;">
