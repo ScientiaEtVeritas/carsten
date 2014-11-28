@@ -907,10 +907,6 @@ module.exports = function (context) {
 		res.sendFile(require('path').resolve(__dirname, '../uploads/' + filename));
 	});
 
-	//context.app.get('/index', function(req, res) {
-	//	res.sendFile(require('path').resolve(__dirname, '../public/apps/index/index.html'));
-	//});
-
 	// a receiver requestes a carst
 	context.app.get('/rest/carst/:hostname', function (req, res) {
 		var carst = {};
@@ -985,6 +981,11 @@ module.exports = function (context) {
 				defers[channel].command.push({receiver: hostname, respond: res});
 			}
 		}
+	});
+
+	context.app.get('/rest/extension', function (req, res) {
+		var file = require('path').resolve(__dirname, '../extension/carsten-extension.crx');
+		res.download(file);
 	});
 
 	context.app.post('/rest/carst', function(req, res) {
