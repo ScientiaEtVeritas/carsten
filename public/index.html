@@ -28,7 +28,12 @@
 </head>
 <body ng-controller="RootCtrl">
 <div class="container">
-    <div class="jumbotron">
+    <div class="jumbotron" style="position:relative;">
+    <a href="/rest/extension"><button style="position:absolute; right:20px; top:20px;" type="button" class="btn btn-default" aria-label="Left Align" ng-click="downloadExtension()">
+        Feel free to install our Chrome Extension
+        <img src="https://cdn1.iconfinder.com/data/icons/logotypes/32/chrome-32.png" />
+    </button></a>
+    <br /><br/>
         <div class="dropdown" style="float:right;">
             <strong>You are on</strong>
             <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown">
