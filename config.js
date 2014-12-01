@@ -1,6 +1,3 @@
-
-console.log(process.env.YOUTUBE_TOKEN);
-
 module.exports = {
 	port: process.env.PORT || 3000,
 	queueTime: process.env.QUEUETIME || 8000,

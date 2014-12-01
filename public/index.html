@@ -79,11 +79,11 @@
                     <h3>Carsts <small>on {{channel}} for {{countReceivers[channel] > 1 ? countReceivers[channel] + ' receivers' : (countReceivers[channel] == 1 ? countReceivers[channel] + ' receiver' : 'nobody')}}</small></h3>
 
                     <div id="toggleMaximize" style="position:absolute; cursor: pointer; font-size:24px; top:0; right:0; display:inline-block;"
-                         ng-click="maximize()"><span class="glyphicon glyphicon-fullscreen"></span></div>
-                     <div style="position:absolute; cursor: pointer; font-size:24px; top:0; right:40px; display:inline-block;"
-                     ng-click="setBack()"><span class="glyphicon glyphicon-refresh"></span></div>
-                <div style="position:absolute; cursor: pointer; font-size:24px; top:0; right:80px; display:inline-block;"
-                     ng-click="clearQueue()"><span class="glyphicon glyphicon-trash"></span></div>
+                         ng-click="maximize()"><small>Fullscreen</small> <span class="glyphicon glyphicon-fullscreen"></span></div>
+                     <div style="position:absolute; cursor: pointer; font-size:24px; top:0; right:135px; display:inline-block;"
+                     ng-click="setBack()"><small>Refresh</small> <span class="glyphicon glyphicon-refresh"></span></div>
+                <div style="position:absolute; cursor: pointer; font-size:24px; top:0; right:245px; display:inline-block;"
+                     ng-click="clearQueue()"><small>Clear</small> <span class="glyphicon glyphicon-trash"></span></div>
             </div>
 
         <div ng-show="carsts[channel].length == 0">
@@ -174,7 +174,7 @@
             <h3>Available Playlists</h3>
 
             <div style="position:absolute; cursor: pointer; font-size:24px; top:0; right:0; display:inline-block;"
-                 ng-click="resetPlaylist()" data-toggle="modal" data-target="#openPlaylistModal"><span
+                 ng-click="resetPlaylist()" data-toggle="modal" data-target="#openPlaylistModal"><small>Add</small> <span
                     class="glyphicon glyphicon-plus"></span></div>
         </div>
         <div ng-show="playlists.length == 0">
@@ -216,7 +216,7 @@
             <h5 ng-if="different != 0">The difference to your time zone amounts to {{different}} hour(s)</h5>
 
             <div style="position:absolute; cursor: pointer; font-size:24px; top:0; right:0; display:inline-block;"
-                 ng-click="addEvent()"><span class="glyphicon glyphicon-plus"></span></div>
+                 ng-click="addEvent()"><small>Add</small> <span class="glyphicon glyphicon-plus"></span></div>
         </div>
         <div ng-show="events[channel].length == 0">
             <li class="list-group-item">No events available.

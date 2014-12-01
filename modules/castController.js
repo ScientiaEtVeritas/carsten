@@ -428,24 +428,30 @@ module.exports = function (context) {
 		gID++;
 		carst.id = gID;
 		var channel = carst.channel;
-		carsts[channel].push(carst);
-		if(carsts[channel][0] === carst) {
-			defaultCarstStatus[channel].status = false;
-			clearTimeout(defaultCarstStatus[channel].timeout);
-			sendToReceivers(channel, 'carst', carsts[channel][0]);
+		if(carsts[channel]) {
+			carsts[channel].push(carst);
+			if(carsts[channel][0] === carst) {
+				defaultCarstStatus[channel].status = false;
+				clearTimeout(defaultCarstStatus[channel].timeout);
+				sendToReceivers(channel, 'carst', carsts[channel][0]);
+			}
+			updateSockets();
 		}
-		updateSockets();
 	}
 
 	// calculate time of sockets input
 	function getTime(inputDuration) {
+		var remmss = /^(\d{1,2}):(\d{1,2})$/;
 		var reTime = /^(?:PT)?(?:(\d{1,2})[:.hH])?(?:(\d{1,4})[:.mM])?(?:(\d{1,6})[sS]?)?$/;
 
 		var match;
 		var resultTime;
 		var timeString;
 
-		if(reTime.test(inputDuration)) {
+		if(remmss.test(inputDuration)) {
+			match = inputDuration.match(remmss);
+			resultTime = (match[1] && +match[1]*60000 || 0) + (match[2] && +match[2]*1000 || 0);
+		} else if(reTime.test(inputDuration)) {
 			match = inputDuration.match(reTime);
 			resultTime = (match[1] && +match[1]*3600000 || 0) + (match[2] && +match[2]*60000 || 0) + (match[3] && +match[3]*1000 || 0);
 		}
@@ -989,6 +995,7 @@ module.exports = function (context) {
 
 	context.app.post('/rest/carst', function(req, res) {
 		var data = req.body;
+		console.log(data);
 		if(regExp.carst.test(data.input)) {
 			handleCast(data);
 			res.end('You successfully send this tab to Carsten.');
