@@ -355,10 +355,9 @@ module.exports = function (context) {
 		var processed = false;
 		context.plugins.some(function(plugin) {
 			if(plugin.app.expression.test(input)) {
+
 				plugin.app.fn({
-					http_options: context.config.http_options,
-					http: context.http,
-					https: require('https'),
+					context: context,
 					match: input.match(plugin.app.expression),
 					input: input
 				}, callback);

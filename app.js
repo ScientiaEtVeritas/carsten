@@ -7,6 +7,7 @@ var url           = require('url');
 
 //set context
 var context        = {};
+context.request    = require('request');;
 context.config     = require('./config');
 context.app        = express();
 context.sockets    = [];
@@ -21,24 +22,9 @@ console.log('\n\n   ██████╗ █████╗ ██████�
 '  ╚██████╗██║  ██║██║  ██║███████║   ██║   ███████╗██║ ╚████║\n'+
 '   ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝   ╚═╝   ╚══════╝╚═╝  ╚═══╝\n');
 
-console.log(context.config.http_proxy);
-
-if(context.config.http_proxy) {
-	context.config.http_options = {
-		hostname: url.parse(context.config.http_proxy).hostname,
-		port: url.parse(context.config.http_proxy).port,
-		path: context.config.http_proxy,
-		headers: {
-			Host: url.parse(context.config.http_proxy).hostname
-		}
-	};
-} else {
-	context.http_options = undefined;
-}
-
-console.log(context.config.http_options);
 
 console.log('\n*------ CONFIGURATION ------*' +
+'\nProxy: ', context.config.http_proxy + 
 '\nPort: ', context.config.port +
 '\nDefault channel: ' + context.config.defaultChannel +
 '\nQueue time: ', context.config.queueTime +
