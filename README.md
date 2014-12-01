@@ -69,3 +69,21 @@ npm start
 
 Open http://localhost:3000 in your browser of choice.
 
+Install Chrome Extension
+------------------------
+
+Currently, we haven't published the chrome extension yet. You need to install it manually.
+
+ 1. Open your Carsten instance in the browser
+ 2. Download the Chrome Extension as a .crx file
+ 3. Open the .crx in a file browser
+ 4. Open in Chrome: chrome://extensions
+ 5. Drag the .crx file into the Chrome Window
+
+Use The Chrome Extension
+------------------------
+
+ 1. If you want to carst a Browser Tab, you can click on the Monitor Icon on the upper-right corner.
+ 2. You have to set up the Carsten endpoint once. Enter your Carsten URL.
+ 3. Now you can click on "Send this Tab" to carst a tab to all receivers that have subcribed to the channel you have provided.
+
