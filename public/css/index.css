@@ -104,3 +104,20 @@ body {
 	font-family: league-gothic;
 	font-size:8em;
 }
+
+.vabsolutep {
+	position:absolute;
+	top:0px;
+	bottom:0;
+	margin:auto;
+}
+
+.playlist-item,
+.playlist-placeholder {
+	display: block;
+	height:100px;
+}
+
+.playlist-placeholder {
+	background-color:#dddddd;
+}

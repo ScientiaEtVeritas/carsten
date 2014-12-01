@@ -23,7 +23,7 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
       };
 
       $('#openPlaylist').sortable({
-          placeholder: "carst-placeholder",
+          placeholder: "playlist-placeholder",
           start: function(event, ui) {
               ui.item.startPos = ui.item.index();
           },
