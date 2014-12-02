@@ -32,7 +32,6 @@ console.log('\n*------ CONFIGURATION ------*' +
 '\nMongoDB: ', context.config.mongodb +
 '\nDatabase: ' + context.config.database + '\n');
 
-
 //create server
 var server = context.http.createServer(context.app);
 server.listen(context.config.port);

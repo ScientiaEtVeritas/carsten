@@ -96,6 +96,10 @@ module.exports = function (context) {
 	var countPosDC = {};
 	countPosDC[context.config.defaultChannel] = 0;
 	var defaultCarstStatus = {};
+	defaultCarstStatus[context.config.defaultChannel] = {
+		status: false,
+		timeout: undefined
+	};
 
 	// initialize default carst for default channel
 	defaultCarst[context.config.defaultChannel] = {
