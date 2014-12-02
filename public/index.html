@@ -69,7 +69,7 @@
             </div>
             <button style="position:absolute; right:170px; top:60px;" type="button" class="btn"
                     ng-click="carst(true)">
-                <span class="glyphicon glyphicon-play"></span> Play Now</button>
+                <span class="glyphicon glyphicon-play"></span> Play Immediately</button>
             <button style="position:absolute; right:0; top:60px;" type="button" class="btn"
                     ng-click="carst(false)">
                 <span class="glyphicon glyphicon-tasks"></span> Append to Queue</button>
@@ -139,11 +139,11 @@
                             <div id="openPlaylist">
                                 <li class="playlist-item list-group-item" ng-repeat="carst in openPlaylist.carsts">
                                     <span ng-bind-html="openPlaylist.carsts[$index].title | to_html"></span>
+                                    <input style="display:inline-block;" class="vabsolutep newCarst contenteditable"
+                                               ng-model="openPlaylist.carsts[$index].url" />
                                     <input type="text" style="right:40px; height:35px; width:66px; display:inline-block; outline:0;"
                                            class="vabsolutep contenteditable" ng-model="openPlaylist.carsts[$index].timeString" />
-                                    <input style="display:inline-block;" class="newCarst contenteditable"
-                                           ng-model="openPlaylist.carsts[$index].url" />
-                                    <div style="cursor:pointer; position:absolute; right:10px; top:22px; display:inline-block;"
+                                    <div style="cursor:pointer; position:absolute; right:10px; top:10px; display:inline-block;"
                                          ng-click="removeCarstFromPlaylist($index)"><span class="glyphicon glyphicon-remove"></span>
                                     </div>
                                 </li>
@@ -154,10 +154,10 @@
                         </ul>
                     </div>
                     <div class="modal-footer">
-                        <div id="newPlaylistSuccess" class="alert alert-success" role="alert">Well done, the playlist
+                        <div id="openPlaylistSuccess" class="alert alert-success" role="alert">Well done, the playlist
                             was successfully added to the database!
                         </div>
-                        <div id="newPlaylistError" class="alert alert-danger" role="alert">Something is wrong! Please
+                        <div id="openPlaylistError" class="alert alert-danger" role="alert">Something is wrong! Please
                             check your inputs!
                         </div>
                         <button type="button" class="btn" data-dismiss="modal"><span

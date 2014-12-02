@@ -183,7 +183,8 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
            $('#openPlaylistSuccess').hide();
        });
 
-       socket.on('openPlaylistSuccess', function() {
+       socket.on('openPlaylistSuccess', function(data) {
+           $scope.openPlaylist = data;
            $('#openPlaylistError').hide();
            $('#openPlaylistSuccess').show();
        });
