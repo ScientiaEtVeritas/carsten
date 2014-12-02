@@ -124,16 +124,23 @@ module.exports = function (context) {
 	/**************************************************************/
 
 	DefaultCarstModel.find(function(err, dcResults) {
-		dcResults.forEach(function(defaultCarstRes) {
-			console.log("DEFAULT CARST FOR " + defaultCarstRes.channel + " IS " + defaultCarstRes.url);
-			var channel = defaultCarstRes.channel;
-			defaultCarst[channel] = defaultCarstRes;
-			defaultCarstStatus[channel] = {
-				status: false,
-				timeout: undefined
-			};
-		});
-		console.log("\n*-------- " + dcResults.length + " DEFAULT CARST(S) LOADED --------*\n");
+		if(!err) {
+			dcResults.forEach(function(defaultCarstRes) {
+				console.log('res', defaultCarstRes);
+				if(defaultCarstRes.url && defaultCarstRes.url != null) {
+					console.log("DEFAULT CARST FOR " + defaultCarstRes.channel + " IS " + defaultCarstRes.url);
+					var channel = defaultCarstRes.channel;
+					defaultCarst[channel] = defaultCarstRes;
+					defaultCarstStatus[channel] = {
+						status: false,
+						timeout: undefined
+					};
+				}
+			});
+			console.log("\n*-------- " + dcResults.length + " DEFAULT CARST(S) LOADED --------*\n");
+		} else {
+			console.error('Default Carst DB Query Error: ' + err);
+		}
 	});
 
 	/**************************************************************/
