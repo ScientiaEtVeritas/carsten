@@ -358,6 +358,11 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
       });
     });
 
+      $scope.timeZone = function(date) {
+          date = date.split(':');
+          return (+date[0] + $scope.different) + ':' + date[1];
+      };
+
     socket.on('sendChannels', function(data) {
       $scope.$apply(function() {
         $scope.channels = data;

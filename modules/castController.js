@@ -126,7 +126,6 @@ module.exports = function (context) {
 	DefaultCarstModel.find(function(err, dcResults) {
 		if(!err) {
 			dcResults.forEach(function(defaultCarstRes) {
-				console.log('res', defaultCarstRes);
 				if(defaultCarstRes.url && defaultCarstRes.url != null) {
 					console.log("DEFAULT CARST FOR " + defaultCarstRes.channel + " IS " + defaultCarstRes.url);
 					var channel = defaultCarstRes.channel;
@@ -249,7 +248,7 @@ module.exports = function (context) {
 
 	// returns true or false depending if parameter is integer or not
 	Number.isInteger = Number.isInteger || function(int) {
-		return (Math.floor(int) === int);
+		return (Math.floor(int) === +int);
 	};
 
 	/**************************************************************/
@@ -856,6 +855,7 @@ module.exports = function (context) {
 					event = new EventsModel(event);
 					event.save(function(err, data) {
 						if(err) {
+							console.error('New Event DB Query Error: ' + err);
 							socket.emit('newEventError');
 						} else {
 							gID++;

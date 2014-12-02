@@ -209,23 +209,13 @@
             </div>
         </div>
         <div style="position: relative;">
-            <h3>Daily Events (UTC,
-                <small>Universal Time, Coordinated</small>
-                )
-            </h3>
-            <h5 ng-if="different != 0">The difference to your time zone amounts to {{different}} hour(s)</h5>
+            <h3>Daily Events</h3>
 
             <div style="position:absolute; cursor: pointer; font-size:24px; top:0; right:0; display:inline-block;"
                  ng-click="addEvent()"><small>Add</small> <span class="glyphicon glyphicon-plus"></span></div>
         </div>
         <div ng-show="events[channel].length == 0">
             <li class="list-group-item">No events available.
-                <div ng-if="addEventStatus && events[channel].length == 0" id="newEventSuccess" style="margin-top:15px;" class="alert alert-success" role="alert">Well done,
-                    the event was successfully added to the database!
-                </div>
-                <div ng-if="addEventStatus && events[channel].length == 0" id="newEventError" style="margin-top:15px;" class="alert alert-danger" role="alert">Something is
-                    wrong! Please check your inputs!
-                </div>
                 <div ng-if="addEventStatus && events[channel].length == 0" style="height:60px;">
                     <div style="position: relative;">
                         <h4 class="borderBottom">Add a daily event</h4>
@@ -234,7 +224,7 @@
                                value="{{newEvent.url}}"/>
                         <input id="newevent_clock"
                                style="position:absolute; width:45px; right:350px; top:33px; margin:0; display: inline-block;"
-                               class="contenteditable" value="{{newEvent.clock}}"/>
+                               class="contenteditable" value="{{timeZone(newEvent.clock)}}"/>
                         <small style="position:absolute; right:310px; top:40px; display: inline-block;">o'clock</small>
                         <input id="newevent_duration"
                                style="position:absolute; right:226px; width:45px; margin:0; top:33px; display: inline-block;"
@@ -276,12 +266,6 @@
                         </div>
                     </div>
                 </div>
-                <div ng-if="addEventStatus && events[channel].length > 0" id="newEventSuccess" style="margin-top:15px;" class="alert alert-success" role="alert">Well done,
-                    the event was successfully added to the database!
-                </div>
-                <div ng-if="addEventStatus && events[channel].length > 0" id="newEventError" style="margin-top:15px;" class="alert alert-danger" role="alert">Something is
-                    wrong! Please check your inputs!
-                </div>
                 <div ng-if="addEventStatus" style="height:60px;">
                     <div style="position: relative;">
                         <h4 class="borderBottom">Add a daily event</h4>
@@ -308,6 +292,12 @@
                         </div>
                     </div>
                 </div>
+            </div>
+            <div ng-if="addEventStatus" id="newEventSuccess" style="padding-left:13px; padding-right:13px; margin-top:15px;" class="alert alert-success" role="alert">Well done,
+                the event was successfully added to the database!
+            </div>
+            <div ng-if="addEventStatus" id="newEventError" style=" margin-left:13px; margin-right:13px; margin-top:15px;" class="alert alert-danger" role="alert">Something is
+                wrong! Please check your inputs!
             </div>
         </div>
         <h3>Commands history (max. 5)</h3>
