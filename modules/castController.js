@@ -124,16 +124,22 @@ module.exports = function (context) {
 	/**************************************************************/
 
 	DefaultCarstModel.find(function(err, dcResults) {
-		dcResults.forEach(function(defaultCarstRes) {
-			console.log("DEFAULT CARST FOR " + defaultCarstRes.channel + " IS " + defaultCarstRes.url);
-			var channel = defaultCarstRes.channel;
-			defaultCarst[channel] = defaultCarstRes;
-			defaultCarstStatus[channel] = {
-				status: false,
-				timeout: undefined
-			};
-		});
-		console.log("\n*-------- " + dcResults.length + " DEFAULT CARST(S) LOADED --------*\n");
+		if(!err) {
+			dcResults.forEach(function(defaultCarstRes) {
+				if(defaultCarstRes.url && defaultCarstRes.url != null) {
+					console.log("DEFAULT CARST FOR " + defaultCarstRes.channel + " IS " + defaultCarstRes.url);
+					var channel = defaultCarstRes.channel;
+					defaultCarst[channel] = defaultCarstRes;
+					defaultCarstStatus[channel] = {
+						status: false,
+						timeout: undefined
+					};
+				}
+			});
+			console.log("\n*-------- " + dcResults.length + " DEFAULT CARST(S) LOADED --------*\n");
+		} else {
+			console.error('Default Carst DB Query Error: ' + err);
+		}
 	});
 
 	/**************************************************************/
@@ -242,7 +248,7 @@ module.exports = function (context) {
 
 	// returns true or false depending if parameter is integer or not
 	Number.isInteger = Number.isInteger || function(int) {
-		return (Math.floor(int) === int);
+		return (Math.floor(int) === +int);
 	};
 
 	/**************************************************************/
@@ -735,7 +741,7 @@ module.exports = function (context) {
 									if(!err) {
 										playlists.push(data);
 										console.log('\n*------ PLAYLIST ADDED TO DATABASE ------*');
-										socket.emit('openPlaylistSuccess');
+										socket.emit('openPlaylistSuccess', data);
 										updateSockets();
 									} else {
 										console.log(err);
@@ -751,7 +757,7 @@ module.exports = function (context) {
 										}
 										playlists.push(playlist);
 										console.log('\n*------ PLAYLIST UPDATED IN DATABASE ------*');
-										socket.emit('openPlaylistSuccess');
+										socket.emit('openPlaylistSuccess', playlist);
 										updateSockets();
 									} else {
 										console.log(err);
@@ -793,6 +799,8 @@ module.exports = function (context) {
 		socket.on('newDefaultCarst', function(data) {
 			var channel = data.channel;
 
+			console.log(data);
+
 			defaultCarst[channel] = {
 				id : -2,
 				channel: channel,
@@ -806,6 +814,7 @@ module.exports = function (context) {
 					clearTimeout(defaultCarstStatus[channel].timeout);
 					countPosDC[channel] = 0;
 					if (playlist) {
+						defaultCarstStatus[channel].status = true;
 						defaultCarst[channel].playlist = JSON.parse(JSON.stringify(playlist));
 						nextInDefault(channel);
 					} else {
@@ -814,13 +823,12 @@ module.exports = function (context) {
 					}
 
 					defaultCarst[channel].channel = channel;
-					//var defaultCarstTmp = new DefaultCarstModel(defaultCarst[channel]);
+
 					DefaultCarstModel.findOneAndUpdate({channel:channel}, defaultCarst[channel], {upsert: true}, function(err, data) {
 						if(!err) {
 							console.log('\n*------ DEFAULT CARST ADDED TO DATABASE ------*');
 						} else {
-							console.log(err);
-							// error
+							console.error('Add New Default Carst DB Query Error: ' + err);
 						}
 						updateSockets();
 					});
@@ -849,6 +857,7 @@ module.exports = function (context) {
 					event = new EventsModel(event);
 					event.save(function(err, data) {
 						if(err) {
+							console.error('New Event DB Query Error: ' + err);
 							socket.emit('newEventError');
 						} else {
 							gID++;

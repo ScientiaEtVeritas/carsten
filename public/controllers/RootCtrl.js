@@ -183,7 +183,8 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
            $('#openPlaylistSuccess').hide();
        });
 
-       socket.on('openPlaylistSuccess', function() {
+       socket.on('openPlaylistSuccess', function(data) {
+           $scope.openPlaylist = data;
            $('#openPlaylistError').hide();
            $('#openPlaylistSuccess').show();
        });
@@ -357,6 +358,11 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
         $scope.different = hours - data;
       });
     });
+
+      $scope.timeZone = function(date) {
+          date = date.split(':');
+          return (+date[0] + $scope.different) + ':' + date[1];
+      };
 
     socket.on('sendChannels', function(data) {
       $scope.$apply(function() {
