@@ -37,6 +37,11 @@ var server = context.http.createServer(context.app);
 server.listen(context.config.port);
 server.timeout = 50000000;
 
+/*context.app.post('/rest/capture', bodyParser.json({limit: '50mb'}), function(req, res) {
+	var data = req.body;
+	console.log(data.toString('binary'));
+});*/
+
 
 server.on('error', function(err) {
 	console.log('\n*------ SERVER ERROR ------*'  +
