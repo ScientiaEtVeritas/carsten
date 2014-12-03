@@ -121,3 +121,20 @@ body {
 .playlist-placeholder {
 	background-color:#dddddd;
 }
+
+.tooltip {
+	min-width: 400px !important;
+	max-width:600px !important;
+}
+
+.carst-item:hover {
+	background-color:#FAF3ED;
+}
+
+.active-carst {
+	background-color:#FAEADC !important;
+}
+
+.btn {
+	background-color:#FAF3ED;
+}
