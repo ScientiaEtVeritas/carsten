@@ -56,6 +56,12 @@ Optional: Set the YouTube token. (You can obtain one via https://code.google.com
 export YOUTUBE_TOKEN=abyafsdfsdfsrgstgsgf
 ```
 
+Optional: Set another default channel, defaults to #global.
+```
+export DEFAULT_CHANNEL=#main
+```
+
+
 Optional: Set a HTTP proxy, if you are behind a corporate firewall.
 ```
 export HTTP_PROXY=http://proxy:8080
@@ -84,5 +90,6 @@ Use The Chrome Extension
 ------------------------
 
  1. If you want to carst a Browser Tab, you can click on the Monitor Icon on the upper-right corner.
- 2. You have to set up the Carsten endpoint once. Enter your Carsten URL.
- 3. Now you can click on "Send this Tab" to carst a tab to all receivers that have subcribed to the channel you have provided.
+ 2. You have to set up the Carsten endpoint once. You can set up more than one Carsten endpoint. Enter your Carsten URL and a channel at Configuration and click "Add new configuration".
+ 3. Now you can click on that specific configuration to carst a tab to all receivers that have subcribed to the channel you have provided on that endpoint.
+ 4. After carsting something, the carsts queue appears and you can change positions of carsts or delete them.
