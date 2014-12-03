@@ -11,6 +11,10 @@ function whyYesIDoLikeJavaScript() {
 app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$window',
   function ($scope, $http, $rootScope, $location, $window) {
 
+      $('.help').tooltip({
+          tooltipClass: "toolTipDetails"
+      });
+
       var a, b, c = ["Knock, knock.\nWho’s there?\nvery long pause…\nJava.\n:-o", "{} + [] === 0", "Do you like JavaScript? --> whyYesIDoLikeJavaScript()", "q. How do you comfort a JavaScript bug? a. You console it.", "You’ll never see this printed to the console :)"];
       c.pop(), b = Math.floor(Math.random() * c.length), a = c[b], "undefined" != typeof window.console && "function" == typeof window.console.log && window.console.log(a);
 

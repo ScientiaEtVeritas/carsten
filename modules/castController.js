@@ -646,7 +646,7 @@ module.exports = function (context) {
 
 				fs.write(fd, binary, null, 'Binary', function(err, written, buff) {
 					fs.close(fd, function() {
-						processCarst('http://localhost:3000/image/' + name , data.duration,  data.channel, addCarstToQueue);
+						processCarst('file://' + name , data.duration,  data.channel, addCarstToQueue);
 					});
 				});
 			});

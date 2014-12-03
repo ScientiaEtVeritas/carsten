@@ -29,14 +29,14 @@
 <body ng-controller="RootCtrl">
 <div class="container">
     <div class="jumbotron" style="position:relative;">
-    <a href="/rest/extension"><button style="position:absolute; right:20px; top:20px;" type="button" class="btn btn-default" aria-label="Left Align" ng-click="downloadExtension()">
+    <a href="/rest/extension"><button style="position:absolute; color:#808080; right:20px; top:20px;" type="button" class="btn" aria-label="Left Align" ng-click="downloadExtension()">
         Feel free to install our Chrome Extension
         <img src="https://cdn1.iconfinder.com/data/icons/logotypes/32/chrome-32.png" />
     </button></a>
     <br /><br/>
         <div class="dropdown" style="float:right;">
             <strong>You are on</strong>
-            <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown">
+            <button class="btn dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown">
                 <span ng-bind="channel"></span>
                 <span class="caret"></span>
             </button>
@@ -55,22 +55,23 @@
                 </p>
             </div>
         </div>
-        <div style="position:relative; text-align:center;">
-            <input id="carst_input" type="text" style="width:100%; height:50px; font-size:25px;" ng-model="input"
-                   ng-keyup="inputKeyup($event)" class="form-control" placeholder="Enter something :)">
+        <div style="position:relative;">
+            <input id="carst_input" type="text" style="width:calc(100% - 40px); height:50px; font-size:25px; display:inline-block;" ng-model="input"
+                   ng-keyup="inputKeyup($event)" class="form-control" placeholder="Enter an URL :)">
+            <span class="glyphicon glyphicon-question-sign help" style="position:absolute; right:0; top:13px; height:auto; font-size:25px; display:inline-block;" title="You can cast URLs: http://sap.com or www.sap.com &#8212 You can cast app sites: app://index&#8212You can cast playlists: playlist://title &#8212; It's also possible to send commands like maximize or refresh"></span>
 
             <div style="position:absolute; left:0; top:60px;">Options: <input type="text"
                                                                               style="width:87px; display:inline-block;"
                                                                               ng-model="inputDuration"
                                                                               ng-keyup="inputKeyup($event)"
                                                                               class="form-control" placeholder="hh:mm:ss" />
-                <button style="margin-left:10px; margin-top:-5px;" type="button" class="btn" ng-click="openFileDialoag()"><span class="glyphicon glyphicon-camera"></span> Upload an image</button>
+                <button style="margin-left:10px; margin-top:-5px; background-color: #FAF3ED;" type="button" class="btn" ng-click="openFileDialoag()"><span class="glyphicon glyphicon-camera"></span> Upload an image</button>
                 <input style="visibility: hidden;" id="imagefile" type="file" />
             </div>
-            <button style="position:absolute; right:170px; top:60px;" type="button" class="btn"
+            <button style="position:absolute; left:320px; top:60px; background-color: #FAF3ED;" type="button" class="btn"
                     ng-click="carst(true)">
                 <span class="glyphicon glyphicon-play"></span> Play Immediately</button>
-            <button style="position:absolute; right:0; top:60px;" type="button" class="btn"
+            <button style="position:absolute; right:0; top:60px; background-color:#FAEADC;" type="button" class="btn"
                     ng-click="carst(false)">
                 <span class="glyphicon glyphicon-tasks"></span> Append to Queue</button>
         </div>
@@ -91,7 +92,7 @@
         </div>
         <div ng-show="carsts[channel].length > 0" class="panel panel-default">
             <div id="l-carsts">
-                <div class="carst-item" ng-repeat="carst in carsts[channel]">
+                <div class="carst-item" ng-repeat="carst in carsts[channel]" ng-class="$index == 0 ? 'active-carst' : ''">
                     <div style="position: relative;">
                         <div style="position:absolute; left:10px; top:2px; display: inline-block; border-right:1px solid #cccccc; width:40px;">
                             {{ carst.id }}
