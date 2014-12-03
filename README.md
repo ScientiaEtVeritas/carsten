@@ -86,4 +86,3 @@ Use The Chrome Extension
  1. If you want to carst a Browser Tab, you can click on the Monitor Icon on the upper-right corner.
  2. You have to set up the Carsten endpoint once. Enter your Carsten URL.
  3. Now you can click on "Send this Tab" to carst a tab to all receivers that have subcribed to the channel you have provided.
-
