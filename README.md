@@ -51,12 +51,12 @@ Optional: Set the port of Carsten.
 export PORT=3000
 ```
 
-Optional: Set the YouTube token. (You can obtain one via https://code.google.com/apis/console)
+Optional: Set the YouTube token for detecting video duration and video title. (You can obtain one via https://code.google.com/apis/console)
 ```
 export YOUTUBE_TOKEN=abyafsdfsdfsrgstgsgf
 ```
 
-Optional: Set the Vimeo token. (You can obtain one via https://developer.vimeo.com/)
+Optional: Set the Vimeo token for detecting video duration and video title. (You can obtain one via https://developer.vimeo.com/)
 ```
 export VIMEO_TOKEN=bdgdgdgwojgjjsdgojlf
 ```
