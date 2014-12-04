@@ -1,5 +1,7 @@
 module.exports = function (context) {
 
+	var receiversockets;
+
 	/**********************************************************************************/
 	/******************************* GLOBAL VARIABLES *********************************/
 	/******************************* DECLERATION AREA *********************************/
@@ -78,15 +80,6 @@ module.exports = function (context) {
 	carsts[context.config.defaultChannel] = [];
 	commands[context.config.defaultChannel] = [];
 
-	var defers = []; // save respond objects for long polling
-	// initialize defers for default channel
-	defers[context.config.defaultChannel] = {
-		command : [],
-		carst : []
-	};
-	var lastDefers = []; // receivers with their last received carst
-	var closed = []; // all receivers, to control if they are disconnected
-	// count receivers per channel
 	var countReceivers = {
 		'#global' : 0
 	};
@@ -306,7 +299,6 @@ module.exports = function (context) {
 	function closeChannel(channel) {
 		delete carsts[channel];
 		delete commands[channel];
-		delete defers[channel];
 		delete countReceivers[channel];
 		delete countPosDC[channel];
 		var pos = channels.indexOf(channel);
@@ -551,39 +543,34 @@ module.exports = function (context) {
 	/**************************************************************/
 
 	// send a carst/command to one specific receiver
-	function sendToReceiver(res, hostname, type, obj) {
-		logSending(hostname, type, obj, 'sendToReceiver', '-');
-		lastDefers[hostname][type] = obj.id;
-		res.send(obj);
+	function sendToReceiver(socket, type, obj) {
+		socket.emit(type, obj);
+		logSending(socket.hostname, type, obj, 'sendToReceiver', '-');
 	}
 
 	// send a carst/command to all receivers
 	function sendToReceivers(channel, type, obj) {
+
 		if(carsts[channel].length !== 0) {
 			defaultCarstStatus[channel].status = false;
 		}
-		if(defers[channel] && defers[channel][type]) {
-			defers[channel][type].forEach(function(defer) {
-				logSending(defer.receiver, type, obj, 'sendToReceivers', channel);
-				defer.respond.send(obj);
-				lastDefers[defer.receiver][type] = obj.id;
-			});
-			if(type === 'carst') {
-				currentTimeout = setTimeout(function() {
-					deleteCarst(channel, obj.id);
-				}, obj.time);
-			}
-			defers[channel][type] = [];
+		if(type === 'carst') {
+			currentTimeout = setTimeout(function() {
+				deleteCarst(channel, obj.id);
+			}, obj.time);
 		}
+
+		logSending('all', type, obj, 'sendToReceivers', channel);
+		receiversockets.emit(type, obj);
+
 	}
 
 	/**********************************************************************************/
-	/*********************** COMMUNICATION WITH CLIENT SOCKETS ************************/
+	/************************ COMMUNICATION WITH CLIENT SOCKET ************************/
 	/**********************************************************************************/
 	/**********************************************************************************/
 	/**********************************************************************************/
 	/**********************************************************************************/
-
 
 	context.io.on('connection', function (socket) {
 
@@ -914,219 +901,174 @@ module.exports = function (context) {
 	});
 
 	/**********************************************************************************/
-	/************************* COMMUNICATION WITH RECEIVERS ***************************/
-	/******************************** FUNCTIONAL AREA *********************************/
+	/********************* COMMUNICATION WITH RECEIVER SOCKETS ************************/
 	/**********************************************************************************/
 	/**********************************************************************************/
 	/**********************************************************************************/
+	/**********************************************************************************/
+
+	receiversockets = context.io.of('/receiver').on('connection', function(socket) {
+
+		/**************************************************************/
+		/************************ SOCKET REGISTER *********************/
+		/**************************************************************/
+
+		socket.on('registerReceiver', function(data) {
+			var channel = data.channel || context.config.defaultChannel;
+			var hostname = data.hostname;
+			socket.channel = channel;
+			socket.hostname = hostname;
+
+			if(hostname && hostname.length > 3 && !receivers[hostname]) {
+
+				logRegistration(hostname, channel);
+
+				if(channels.indexOf(channel) === -1) {
+					channels.push(channel);
+				}
+
+				if(!carsts[channel]) {
+					carsts[channel] = [];
+				}
+				if(!commands[channel]) {
+					commands[channel] = [];
+				}
+
+				if(!defaultCarst[channel]) {
+					defaultCarst[channel] = {
+						id : -2,
+						channel: channel,
+						url : 'app://index',
+						playlist: undefined
+					};
+				}
+
+				if(!defaultCarstStatus[channel]) {
+					defaultCarstStatus[channel] = {};
+					defaultCarstStatus[channel].status = false;
+					defaultCarstStatus[channel].timeout = undefined;
+				}
+
+				if(!countPosDC[channel]) {
+					countPosDC[channel] = 0;
+				}
+
+				if(defaultCarst[channel].playlist && defaultCarst[channel].playlist != 'null' && !defaultCarstStatus[channel].status) {
+					defaultCarstStatus[channel].status = true;
+					nextInDefault(channel);
+				}
+
+
+				if(!receivers[hostname]) {
+					receivers[hostname] = receivers[hostname] || channel;
+				}
+
+				if(!countReceivers[channel]) {
+					countReceivers[channel] = 0;
+				}
+
+				if(!events[channel]) {
+					events[channel] = [];
+				}
+
+				countReceivers[channel]++;
+
+				context.io.sockets.emit('message', {
+					title: hostname,
+					options: {
+						body: "receiver called " + hostname + " joined channel " + channel,
+						icon: '../img/info-icon.png'
+					},
+					channel: channel,
+					counter: '' + countReceivers[channel]
+				});
+				updateSockets();
+				socket.emit('registrationSuccessfully');
+				if(carsts[channel].length > 0) {
+					sendToReceiver(socket, 'carst', carsts[channel][0]);
+				} else if(carsts[channel].length === 0) {
+					if(defaultCarst[channel].playlist && defaultCarst[channel].playlist != 'null' && defaultCarstStatus[channel].status) {
+						defaultCarst[channel].playlist.carsts[countPosDC[channel]-1].id = -2;
+						sendToReceiver(socket, 'carst', defaultCarst[channel].playlist.carsts[countPosDC[channel]-1]);
+					} else {
+						sendToReceiver(socket, 'carst', defaultCarst[channel]);
+					}
+				}
+			} else {
+				var message;
+				if(!hostname) {
+					message = "Please provide a receiver name.";
+				} else if(!hostname.length > 3) {
+					message = "Receiver name is too short.";
+				} else if(receivers[hostname]) {
+					message = "Receiver name is already taken.";
+				} else {
+					message = "Something went wrong";
+				}
+
+				socket.emit('registrationFailed', message);
+			}
+		});
+
+		/**************************************************************/
+		/*********************** SOCKET DISCONNECT ********************/
+		/**************************************************************/
+
+		socket.on('disconnect', function() {
+			var hostname = socket.hostname;
+			var channel = socket.channel;
+				countReceivers[channel]--;
+				delete receivers[hostname];
+				if(countReceivers[channel] === 0 && channel !== channels[0]) {
+					closeChannel(channel);
+					updateSockets();
+				}
+
+				logDeregistration(hostname, channel);
+
+				context.io.sockets.emit('message', {
+					title: hostname,
+					options: {
+						body: hostname + ' disconnected from ' + channel,
+						icon: '../img/info-icon.png'
+					},
+					channel: channel,
+					counter: countReceivers[channel]
+				});
+		});
+
+	});
+
+	/**********************************************************************************/
+	/**************************** COMMUNICATION REST ROUTES ***************************/
+	/**********************************************************************************/
+	/**********************************************************************************/
+	/**********************************************************************************/
+	/**********************************************************************************/
+
+	/**************************************************************/
+	/************************* UPLOAD IMAGES **********************/
+	/**************************************************************/
 
 	context.app.get('/image/:filename', function(req, res) {
 		var filename = req.params.filename;
 		res.sendFile(require('path').resolve(__dirname, '../uploads/' + filename));
 	});
 
-	// a receiver requestes a carst
-	context.app.get('/rest/carst/:hostname', function (req, res) {
-		var carst = {};
-		if(req.params.hostname && receivers[req.params.hostname]) {
-			var hostname = req.params.hostname;
-			var channel = receivers[hostname];
-			closed[hostname] = false;
-			if(carsts[channel].length > 0 && carsts[channel][0].id !== lastDefers[hostname].carst) {
-				sendToReceiver(res, hostname, 'carst', carsts[channel][0]);
-			} else if(carsts[channel].length === 0 && lastDefers[hostname].carst !== -2) {
-				if(defaultCarst[channel].playlist && defaultCarst[channel].playlist != 'null' && defaultCarstStatus[channel].status) {
-					defaultCarst[channel].playlist.carsts[countPosDC[channel]-1].id = -2;
-					sendToReceiver(res, hostname, 'carst', defaultCarst[channel].playlist.carsts[countPosDC[channel]-1]);
-				} else {
-					sendToReceiver(res, hostname, 'carst', defaultCarst[channel]);
-				}
-			} else {
-				defers[channel].carst.push({receiver: hostname, respond : res});
-				// BUG: on CF this isn't fired
-				req.connection.on('close',function(){
-					closed[hostname] = true;
-					setTimeout(function() {
-						if(receivers[hostname] && closed[hostname]) {
-							countReceivers[channel]--;
-							delete receivers[hostname];
-							delete lastDefers[hostname];
-							if(countReceivers[channel] === 0 && channel !== channels[0]) {
-								closeChannel(channel);
-								updateSockets();
-							} else {
-								var delDefer = {
-									carst: indexOfObject(defers[channel].carst, 'receiver', hostname),
-									command: indexOfObject(defers[channel].command, 'receiver', hostname)
-								};
-								if ( delDefer.carst !== -1) {
-									defers[channel].carst.splice(delDefer.carst, 1);
-								}
-								if ( delDefer.command !== -1) {
-									defers[channel].command.splice(delDefer.carst, 1);
-								}
-							}
+	/**************************************************************/
+	/********************** DOWNLOAD EXTENSION ********************/
+	/**************************************************************/
 
-							logDeregistration(hostname, channel);
-
-							context.io.sockets.emit('message', {
-								title: hostname,
-								options: {
-									body: hostname + ' disconnected from ' + channel,
-									icon: '../img/info-icon.png'
-								},
-								channel: channel,
-								counter: countReceivers[channel]
-							});
-						}
-					}, 5000);
-				});
-			}
-		} else {
-			console.log("ERROR: Hostname is undefined.");
-		}
-	});
-
-	// a receiver requests a command
-	context.app.get('/rest/command/:hostname', function (req, res) {
-		var command = {};
-		if(req.params.hostname && receivers[req.params.hostname]) {
-			var hostname = req.params.hostname;
-			var channel = receivers[hostname];
-			if (commands[channel].length > 0 && commands[channel][commands[channel].length - 1].id !== lastDefers[hostname].command) {
-				sendToReceiver(res, req, 'command', commands[channel][commands[channel].length - 1]);
-			} else {
-				defers[channel].command.push({receiver: hostname, respond: res});
-			}
-		}
-	});
-
-	context.app.get('/rest/extension', function (req, res) {
+	context.app.get('/extension', function (req, res) {
 		var file = require('path').resolve(__dirname, '../extension/carsten-extension.crx');
 		res.download(file);
 	});
 
-	context.app.post('/rest/carst', function(req, res) {
-		var data = req.body;
-		console.log(data);
-		if(regExp.carst.test(data.input)) {
-			handleCast(data);
-			res.end('You successfully send this tab to Carsten.');
-		} else {
-			res.end('Ooops! Something went wrong!');
-		}
-	});
+	/**************************************************************/
+	/*********************** SLACK INTEGRATION ********************/
+	/**************************************************************/
 
-	// registration of a receiver
-	context.app.post('/rest/init', function(req, res) {
-		var channel = req.body.channel || context.config.defaultChannel;
-		var hostname = req.body.hostname;
-
-		if(hostname && hostname.length > 3 && !receivers[hostname]) {
-
-			logRegistration(hostname, channel);
-
-			if(channels.indexOf(channel) === -1) {
-				channels.push(channel);
-			}
-
-			if(!carsts[channel]) {
-				carsts[channel] = [];
-			}
-			if(!commands[channel]) {
-				commands[channel] = [];
-			}
-
-			if(!lastDefers[hostname]) {
-				lastDefers[hostname] = {
-					command : commands[channel][commands[channel].length - 1] ? commands[channel][commands[channel].length - 1].id : -1,
-					carst : - 1
-				};
-			}
-
-			if(!defaultCarst[channel]) {
-				defaultCarst[channel] = {
-					id : -2,
-					channel: channel,
-					url : 'app://index',
-					playlist: undefined
-				};
-			}
-
-			if(!defaultCarstStatus[channel]) {
-				defaultCarstStatus[channel] = {};
-				defaultCarstStatus[channel].status = false;
-				defaultCarstStatus[channel].timeout = undefined;
-			}
-
-			if(!countPosDC[channel]) {
-				countPosDC[channel] = 0;
-			}
-
-			if(defaultCarst[channel].playlist && defaultCarst[channel].playlist != 'null' && !defaultCarstStatus[channel].status) {
-				defaultCarstStatus[channel].status = true;
-				nextInDefault(channel);
-			}
-
-
-			if(!receivers[hostname]) {
-				receivers[hostname] = receivers[hostname] || channel;
-			}
-
-			if(!countReceivers[channel]) {
-				countReceivers[channel] = 0;
-			}
-
-			if(!defers[channel]) {
-				defers[channel] = {
-					command : [],
-					carst : []
-				};
-			}
-
-			if(!events[channel]) {
-				events[channel] = [];
-			}
-
-			closed[hostname] = false;
-
-			countReceivers[channel]++;
-
-			context.io.sockets.emit('message', {
-				title: hostname,
-				options: {
-					body: "receiver called " + hostname + " joined channel " + channel,
-					icon: '../img/info-icon.png'
-				},
-				channel: channel,
-				counter: '' + countReceivers[channel]
-			});
-			updateSockets();
-			res.end(JSON.stringify({
-				status: true
-			}));
-		} else {
-			var message;
-			if(!hostname) {
-				message = "Please provide a receiver name.";
-			} else if(!hostname.length > 3) {
-				message = "Receiver name is too short.";
-			} else if(receivers[hostname]) {
-				message = "Receiver name is already taken.";
-			} else {
-				message = "Something went wrong";
-			}
-
-			res.end(JSON.stringify({
-				status: false,
-				message: message
-			}));
-		}
-	});
-
-
-	/*post a carst from slack
-	context.app.post('/rest/slack_carst', function (req, res) {
+	/*context.app.post('/rest/slack_carst', function (req, res) {
 		if(context.config.slackToken === req.body.token && req.body.trigger_word === 'carst')
 		{
 			var command = req.body.text.split(" ");
