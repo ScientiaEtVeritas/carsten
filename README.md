@@ -78,7 +78,7 @@ Run Carsten
 npm start
 ```
 
-Open http://localhost:3000 in your browser of choice.
+In case of default settings you can open http://localhost:3000 in your browser of choice.
 
 Install Chrome Extension
 ------------------------
