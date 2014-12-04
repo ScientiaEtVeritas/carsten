@@ -56,6 +56,11 @@ Optional: Set the YouTube token. (You can obtain one via https://code.google.com
 export YOUTUBE_TOKEN=abyafsdfsdfsrgstgsgf
 ```
 
+Optional: Set the Vimeo token. (You can obtain one via https://developer.vimeo.com/)
+```
+export VIMEO_TOKEN=bdgdgdgwojgjjsdgojlf
+```
+
 Optional: Set another default channel, defaults to #global.
 ```
 export DEFAULT_CHANNEL=#main
