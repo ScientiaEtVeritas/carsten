@@ -9,7 +9,11 @@ function whyYesIDoLikeJavaScript() {
 }
 
 app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$window',
-  function ($scope, $http, $rootScope, $location, $window) {
+  function ($scope, $http, $rootScope, $location, $window, $interval) {
+
+      var timer;
+
+      $scope.capture = {};
 
       $('.help').tooltip({
           tooltipClass: "toolTipDetails"
@@ -120,7 +124,7 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
     $scope.saveEvent = function() {
 
       $scope.newEvent.url= $('#newevent_url').val();
-      $scope.newEvent.clock = $('#newevent_clock').val();
+      $scope.newEvent.clock = $scope.timeZone($('#newevent_clock').val());
       $scope.newEvent.duration = $('#newevent_duration').val();
 
       socket.emit('newEvent', {
@@ -210,16 +214,6 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
 
     $scope.setDefault = function(defaultCarst, channel) {
 
-      /*if(rePlaylist.test(defaultCarst)) {
-        var match = defaultCarst.match(rePlaylist);
-        var index = indexOfObject($scope.playlists, 'title', match[1]);
-        if(index === -1) {
-          alert("Diese Playlist gibt es nicht.");
-        } else {
-          defaultCarst = $scope.playlists[index];
-        }
-      }*/
-
       var data = {
         defaultCarst: defaultCarst,
         channel: channel
@@ -250,7 +244,7 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
       $scope.maximize = function() {
           var channel = $scope.channel;
           socket.emit('sendInput', {
-              input: 'toggleMaximize',
+              input: 'maximize',
               inputDuration: '',
               channel: channel
           });
@@ -262,6 +256,7 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
       var inputDuration = $scope.inputDuration;
       var channel = $scope.channel;
 
+
       $scope.input = '';
       $scope.inputDuration = '';
 
@@ -270,7 +265,6 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
             channel: channel
         };
 
-        console.log(input.slice(-3));
         if(now || input.slice(-3) === " -f") {
             carst.input = (input.slice(-3) === " -f") ? (input.substr(0, input.length -3)) : input;
             socket.emit('carstNow', carst);
@@ -356,6 +350,12 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
           reader.readAsBinaryString(file);
       });
 
+      socket.on('capture', function(data) {
+          $scope.$apply(function() {
+              $scope.capture = data;
+          });
+      });
+
     socket.on('differentTime', function(data) {
       var hours = new Date().getHours();
       $scope.$apply(function() {
@@ -398,10 +398,47 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
       });
     });
 
+      function getPartsOfMilliseconds(time) {
+          var hrs = Math.floor(time/3600000);
+          var min = Math.floor((time - hrs*3600000)/60000);
+          var sec = (time - (min*60000))/1000;
+          return [hrs, min, sec];
+      }
+
+      function formatTime(arr) {
+          var str = '';
+          arr.forEach(function(a, i) {
+              str += (i === 0 ? '' : ':') + ('0' + Math.round(a)).slice(-2);
+          });
+          return str;
+      }
+
     socket.on('sendCarsts', function(data) {
       $scope.$apply(function() {
         $scope.carsts = data;
         $scope.carsts[$scope.channel] = $scope.carsts[$scope.channel] || [];
+          if(!timer && $scope.carsts[$scope.channel][0]) {
+              clearInterval(timer);
+              timer = undefined;
+              console.log("NEW INTERVAL");
+              timer = setInterval(function() {
+                  if($scope.carsts[$scope.channel][0]) {
+                      var leftTime = $scope.carsts[$scope.channel][0].endTime - new Date();
+                      if(leftTime < 1000) {
+                          clearInterval(timer);
+                          timer = undefined;
+                      }
+                      console.log(getPartsOfMilliseconds(Math.round(leftTime)));
+                      var newTimeString = formatTime(getPartsOfMilliseconds(leftTime));
+                      $scope.$apply(function() {
+                          $scope.carsts[$scope.channel][0].timeString = newTimeString;
+                      });
+                  } else {
+                      clearInterval(timer);
+                      timer = undefined;
+                  }
+              }, 1000);
+          }
       });
     });
 
@@ -431,9 +468,9 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
 
       $scope.$apply(function() {
         $scope.countReceivers[data.channel] = data.counter;
+          showMessage(data.title, data.options);
       });
 
-      showMessage(data.title, data.options);
     });
 
    function indexOfObject(array, key, value) {

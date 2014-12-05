@@ -1,7 +1,5 @@
 module.exports = function (context) {
 
-	var receiversockets;
-
 	/**********************************************************************************/
 	/******************************* GLOBAL VARIABLES *********************************/
 	/******************************* DECLERATION AREA *********************************/
@@ -42,7 +40,8 @@ module.exports = function (context) {
 			url: String,
 			time: Number,
 			timeString: String,
-			id: Number
+			id: Number,
+			endTime: Number
 		}
 	});
 
@@ -108,6 +107,10 @@ module.exports = function (context) {
 	var regExp = {};
 	regExp.carst = new RegExp("^((http|https|app)://)|(www.)", "i");
 	regExp.playlist = new RegExp("^playlist:\/\/(.*)$", "i");
+
+	var receiversockets; // Socket connection to all receivers
+
+	var capture = {}; // latest screenshots for all channels
 
 	/**********************************************************************************/
 	/*************************** INITIAL DATABASE QUERIES *****************************/
@@ -193,7 +196,8 @@ module.exports = function (context) {
 			clearTimeout(currentTimeout);
 			if(carsts[event.channel]) {
 				carsts[event.channel].unshift(event.eventCarst);
-				sendToReceivers(event.channel, 'carst', event.eventCarst);
+				setEndTime(event.channel);
+				sendToReceivers(event.channel, 'carst', carsts[event.channel][0]);
 				updateSockets();
 			}
 			delete eventTimeouts[event._id];
@@ -333,6 +337,10 @@ module.exports = function (context) {
 		}
 	}
 
+	function setEndTime(channel) {
+		carsts[channel][0].endTime = +(new Date()) + +carsts[channel][0].time;
+	}
+
 
 	// delete a carsts, remove it from the queue
 	function deleteCarst(channel, id) {
@@ -341,6 +349,7 @@ module.exports = function (context) {
 			carsts[channel].splice(position, 1);
 			if(position === 0 && typeof carsts[channel][0] !== "undefined") {
 				sendToReceivers(channel, 'carst', carsts[channel][0]);
+				setEndTime(channel);
 			} else if(carsts[channel].length === 0) {
 				sendDefault(channel);
 			}
@@ -420,25 +429,33 @@ module.exports = function (context) {
 		carst.id = gID;
 		clearTimeout(currentTimeout);
 		carsts[carst.channel].unshift(carst);
+		setEndTime(carst.channel);
 		sendToReceivers(carst.channel, 'carst', carsts[carst.channel][0]);
 		updateSockets();
 	}
 
 	// add a specific carst to carsts queue
 	function addCarstToQueue(carst) {
-		//Channelangabe überdenken
 		gID++;
 		carst.id = gID;
 		var channel = carst.channel;
 		if(carsts[channel]) {
 			carsts[channel].push(carst);
 			if(carsts[channel][0] === carst) {
+				setEndTime(channel);
 				defaultCarstStatus[channel].status = false;
 				clearTimeout(defaultCarstStatus[channel].timeout);
 				sendToReceivers(channel, 'carst', carsts[channel][0]);
 			}
 			updateSockets();
 		}
+	}
+
+	function getPartsOfMilliseconds(time) {
+		var hrs = Math.floor(time/3600000);
+		var min = Math.floor((time - hrs*3600000)/60000);
+		var sec = (time - (min*60000))/1000;
+		return [hrs, min, sec];
 	}
 
 	// calculate time of sockets input
@@ -460,10 +477,7 @@ module.exports = function (context) {
 
 		resultTime = resultTime || 1800000;
 
-		var hrs = Math.floor(resultTime/3600000);
-		var min = Math.floor((resultTime - hrs*3600000)/60000);
-		var sec = (resultTime - (min*60000))/1000;
-		timeString = formatTime([hrs, min, sec]);
+		timeString = formatTime(getPartsOfMilliseconds(resultTime));
 
 		return {
 			resultTime: resultTime,
@@ -511,14 +525,11 @@ module.exports = function (context) {
 		if(match) {
 			index = indexOfObject(playlists, 'title', match[1]);
 		} else {
-			console.log('Not a valid playlist');
 			callback(undefined);
 		}
 		if(index === -1) {
-			console.log('Not a valid playlist');
 			callback(undefined);
 		} else {
-			console.log('A valid playlist');
 			callback(playlists[index]);
 		}
 	}
@@ -529,7 +540,8 @@ module.exports = function (context) {
 		var channel = data.channel;
 		var command = {
 			id: cID,
-			command: data.input
+			command: data.input,
+			channel: channel
 		};
 		commands[channel].push(command);
 		if(commands[channel][commands[channel].length - 1] === command) {
@@ -562,7 +574,6 @@ module.exports = function (context) {
 
 		logSending('all', type, obj, 'sendToReceivers', channel);
 		receiversockets.emit(type, obj);
-
 	}
 
 	/**********************************************************************************/
@@ -575,6 +586,7 @@ module.exports = function (context) {
 	context.io.on('connection', function (socket) {
 
 		socket.emit('differentTime', new Date().getHours());
+		socket.emit('capture', capture);
 
 		/**************************************************************/
 		/*********************** SOCKET CONNECT ***********************/
@@ -584,6 +596,26 @@ module.exports = function (context) {
 
 		context.sockets[socket.id] = socket;
 		updateSocket(socket);
+
+		socket.on('getRandomGag', function() {
+			function send_meme(url) {
+				url = url || "http://9gag.com/random";
+				context.request(url, function(err, res, body) {
+					if(!err && res.statusCode == 302) {
+						send_meme(res.headers['location']);
+					} else if(!err && body && res.statusCode == 200) {
+						var $ = require('cheerio').load(body);
+						var title = $(".badge-item-title")[0].children[0].data;
+						var src = $(".badge-item-img")[0] ? $(".badge-item-img")[0].attribs.src : $(".badge-item-animated-img")[0].attribs.src;
+						socket.emit('sendRandomGag', {
+							title: title,
+							src: src
+						});
+					}
+				});
+			}
+			send_meme();
+		});
 
 		/**************************************************************/
 		/************************ HANDLE INPUT ************************/
@@ -654,6 +686,7 @@ module.exports = function (context) {
 				carsts[channel].splice(newPos, 0, tmp);
 				tmp = null;
 				if(newPos === 0 || oldPos === 0) {
+					setEndTime(channel);
 					clearTimeout(currentTimeout);
 					sendToReceivers(channel, 'carst', carsts[channel][0]);
 				}
@@ -682,7 +715,9 @@ module.exports = function (context) {
 			var channel = data.channel;
 			if(carsts[channel].length > 0) {
 				clearTimeout(currentTimeout);
+				setEndTime(channel);
 				sendToReceivers(channel, 'carst', carsts[channel][0]);
+				updateSockets();
 			}
 		});
 
@@ -910,6 +945,21 @@ module.exports = function (context) {
 	receiversockets = context.io.of('/receiver').on('connection', function(socket) {
 
 		/**************************************************************/
+		/********************* GET PREVIEW PICTURES *******************/
+		/**************************************************************/
+
+		socket.on('capture', function(image) {
+			var buff= new Buffer(image.toString('binary'),'binary');
+
+			capture[socket.channel] = {
+				buff: buff.toString('base64'),
+				channel: socket.channel
+			};
+
+			context.io.sockets.emit('capture', capture);
+		});
+
+		/**************************************************************/
 		/************************ SOCKET REGISTER *********************/
 		/**************************************************************/
 
@@ -973,6 +1023,8 @@ module.exports = function (context) {
 
 				countReceivers[channel]++;
 
+				updateSockets();
+
 				context.io.sockets.emit('message', {
 					title: hostname,
 					options: {
@@ -982,7 +1034,7 @@ module.exports = function (context) {
 					channel: channel,
 					counter: '' + countReceivers[channel]
 				});
-				updateSockets();
+
 				socket.emit('registrationSuccessfully');
 				if(carsts[channel].length > 0) {
 					sendToReceiver(socket, 'carst', carsts[channel][0]);

@@ -1,0 +1,36 @@
+<html ng-app="app">
+	<head>
+		<title>Carsten Receiver</title>
+		<link rel="stylesheet" href="style.css"></link>
+		<script src="//use.edgefonts.net/league-gothic;lato.js"></script>
+		<script type="text/javascript" src="../../components/angular/angular.min.js"></script>
+		<script src="/socket.io/socket.io.js"></script>
+		<script>
+
+			var todaysLunch;
+
+			var app = angular.module('app', []);
+
+			app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$window',
+				function ($scope, $location) {
+					var socket = io.connect($location.origin);
+					socket.emit('getRandomGag');
+					socket.on('sendRandomGag', function(data) {
+						$scope.$apply(function() {
+							$scope.title = data.title;
+							$scope.src = data.src;
+						});
+					});
+				}]);
+
+
+		</script>
+	</head>
+	<body ng-controller="RootCtrl" style="background-color: black;">
+
+	<h1 style="font-size:3em; max-width:400px; opacity:0.8; font-family:Lato; padding:4px; position:absolute; background-color:#fff; top:0px; right:0px;">{{title}}</h1>
+
+		<img ng-src="{{src}}" style="margin:0px; height:100%; max-width:100%;" />
+
+	</body>
+</html>

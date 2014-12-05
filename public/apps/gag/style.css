@@ -1,7 +1,8 @@
 body {
 	text-align: center;
-	padding: 100px;
 	font-family: "Lato", sans-serif;
+	padding:0;
+	margin:0;
 	color: gray;
 }
 
