@@ -80,6 +80,14 @@ npm start
 
 In case of default settings you can open http://localhost:3000 in your browser of choice.
 
+Show Casts
+----------
+
+To display carsts you need to install a carsten receiver. 
+There is another repository for the carsten receiver: https://github.com/carst-it/carsten-receiver
+
+You can install a carsten receiver on every device, so it's possible to install it on a Raspberry Pi connected to a TV for the best carsten experience.
+
 Install Chrome Extension
 ------------------------
 
