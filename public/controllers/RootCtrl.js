@@ -11,6 +11,39 @@ function whyYesIDoLikeJavaScript() {
 app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$window',
   function ($scope, $http, $rootScope, $location, $window, $interval) {
 
+      var slider;
+
+      $(document).ready(function() {
+
+
+          function setSlider() {
+              $('#ex8').attr('data-slider-max', slider.getValue() + 30);
+              $('#ex8').attr('data-slider-value', slider.getValue());
+              $('#ex8').attr('data-slider-min', (slider.getValue() - 30 < 1 ? 1 : slider.getValue() - 30) );
+              slider.destroy();
+              slider = new Slider("#ex8");
+              $('#ex8').slider().on('slideStop', setSlider);
+          }
+
+          $("#ex8").slider();
+
+// Without JQuery
+          slider = new Slider("#ex8");
+          $('#ex8').slider().on('slideStop', setSlider);
+
+
+          $scope.installed = false;
+
+          $scope.$watch(document.getElementById('extension-is-installed'), function() {
+              if(document.getElementById('extension-is-installed')) {
+                  $scope.installed = true;
+              }
+          });
+
+      });
+      $scope.show = 1;
+
+
       var timer;
 
       $scope.capture = {};
@@ -55,8 +88,10 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
           $('#imagefile').click();
       };
 
-      $scope.showMore = function() {
-          $('#extended').toggle('slide', {direction:'up'}, 500);
+      $scope.menu = function(i, $event) {
+          $scope.show = i;
+          $('.container-active').removeClass('container-active');
+          $($event.target).addClass('container-active');
       };
 
       $(document).on('click', '#more_button', function() {
@@ -72,6 +107,8 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
       $('#carst_input').focus();
 
       $('#l-carsts').sortable({
+          axis:"y",
+          scroll:true,
           placeholder: "carst-placeholder",
           start: function(event, ui) {
               ui.item.startPos = ui.item.index();
@@ -110,9 +147,23 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
       clock: '12:00',
       duration: '05:00'
     };
+    var evSlider;
+
+      function setEvSlider() {
+          $('#evslider').attr('data-slider-max', evSlider.getValue() + 30);
+          $('#evslider').attr('data-slider-value', evSlider.getValue());
+          $('#evslider').attr('data-slider-min', (evSlider.getValue() - 30 < 1 ? 1 : evSlider.getValue() - 30) );
+          evSlider && evSlider.destroy();
+          evSlider = new Slider("#evslider");
+          $('#evslider').slider().on('slideStop', setEvSlider);
+      }
 
     $scope.addEvent = function() {
       $scope.addEventStatus = true;
+        evSlider && evSlider.destroy();
+        $("#evslider").slider();
+        evSlider = new Slider("#evslider");
+        setEvSlider();
     };
 
     $scope.cancelEvent = function() {
@@ -125,7 +176,7 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
 
       $scope.newEvent.url= $('#newevent_url').val();
       $scope.newEvent.clock = $scope.timeZone($('#newevent_clock').val());
-      $scope.newEvent.duration = $('#newevent_duration').val();
+      $scope.newEvent.duration = evSlider.getValue();
 
       socket.emit('newEvent', {
           channel: $scope.channel,
@@ -133,20 +184,16 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
         });
 
         socket.on('newEventError', function() {
-            $('#newEventError').show();
-            $('#newEventSuccess').hide();
+            console.log('New Event Error');
+            //$('#newEventError').show();
+            //$('#newEventSuccess').hide();
         });
 
         socket.on('newEventSuccess', function() {
-            $('#newEventError').hide();
-            $('#newEventSuccess').show();
-
-            $scope.newEvent = {
-                url: 'sample carst',
-                clock: '12:00',
-                duration: '05:00'
-            };
-
+            console.log('New Event Success');
+            //$('#newEventError').hide();
+            //$('#newEventSuccess').show();
+            $scope.addEventStatus = false;
         });
 
     };
@@ -253,7 +300,7 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
     $scope.carst = function (now) {
 
       var input = $scope.input;
-      var inputDuration = $scope.inputDuration;
+      var inputDuration = slider.getValue();
       var channel = $scope.channel;
 
 
@@ -430,6 +477,7 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
                       }
                       console.log(getPartsOfMilliseconds(Math.round(leftTime)));
                       var newTimeString = formatTime(getPartsOfMilliseconds(leftTime));
+                     // $('.active-carst').css({'', ''});
                       $scope.$apply(function() {
                           $scope.carsts[$scope.channel][0].timeString = newTimeString;
                       });
