@@ -9,8 +9,11 @@
 
     <link href="/components/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet"></link>
     <link href="/css/index.css" rel="stylesheet"/>
-    <script src="//use.edgefonts.net/league-gothic.js"></script>
+    <link href="components/seiyria-bootstrap-slider/dist/css/bootstrap-slider.min.css" rel="stylesheet"/>
+    <link href='http://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
     <script src="//use.edgefonts.net/league-gothic;lato.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="/components/sweetalert/lib/sweet-alert.css">
 
     <!-- Bower Dependencies -->
     <script type="text/javascript" src="/components/jquery/dist/jquery.min.js"></script>
@@ -20,331 +23,374 @@
     <script type="text/javascript" src="/components/angular-route/angular-route.min.js"></script>
     <script type="text/javascript" src="/components/angular-bootstrap/ui-bootstrap.min.js"></script>
     <script type="text/javascript" src="/components/angular-bootstrap/ui-bootstrap-tpls.min.js"></script>
+    <script type="text/javascript" src="/components/seiyria-bootstrap-slider/dist/bootstrap-slider.min.js"></script>
+    <script type="text/javascript" src="/components/sweetalert/lib/sweet-alert.min.js"></script>
 
     <script src="/socket.io/socket.io.js"></script>
 
     <script type="text/javascript" src="/app.js"></script>
     <script type="text/javascript" src="/controllers/RootCtrl.js"></script>
+
+    <link rel="chrome-webstore-item" href="https://chrome.google.com/webstore/detail/iajlnlmlcidjdpjgdjkkopijgfellabb">
+    <meta name="google-site-verification" content="OBLynu3Qpl_W9gL8oSFOdxSgcdqwcMdmsbdG3oKgD04"/>
+
 </head>
 <body ng-controller="RootCtrl">
-<div class="container">
-    <div class="jumbotron" style="position:relative;">
-    <a href="/extension"><button style="position:absolute; color:#808080; right:20px; top:20px;" type="button" class="btn" aria-label="Left Align" ng-click="downloadExtension()">
-        Feel free to install our Chrome Extension
-        <img src="https://cdn1.iconfinder.com/data/icons/logotypes/32/chrome-32.png" />
-    </button></a>
-    <br /><br/>
-        <div class="dropdown" style="float:right;">
-            <strong>You are on</strong>
-            <button class="btn dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown">
-                <span ng-bind="channel"></span>
-                <span class="caret"></span>
-            </button>
-            <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu1">
-                <li role="presentation"><a role="menuitem" tabindex="-1" href="#" ng-repeat="channel in channels"
-                                           ng-click="setChannel(channel)">{{channel}}</a></li>
-            </ul>
+<div class="jumbotron">
+<div id="header">
+    <div id="nav">
+        <div id="chromeextension" style="height:70px; width:300px; position:absolute; right:-75px; padding-top:10px; transform:rotate(45deg); top:30px; padding-left:10px; background-color:rgba(255,255,255,0.2);"
+             ng-if="!installed" onclick="chrome.webstore.install()">
+            <a style="color:#fff;" href="https://chrome.google.com/webstore/detail/carsten/iajlnlmlcidjdpjgdjkkopijgfellabb" target="_blank">Check out our<br />
+            Chrome Extension</a>
         </div>
-    <br /><br /><br />
-        <div style="text-align:center;">
-            <div class="head-circle" style="z-index:0;">
-                <div style="position: absolute; left:30px; z-index:2;" class="heading">Carsten &#10084;</div>
-                <div style="width: 60px; height:60px; background-color:#FBDFC9; position: absolute; left:100px; top:75px; border-radius:60px; z-index:1;"></div>
-                <div style="width: 60px; height:60px; background-color:#FBDFC9; position: absolute; right:100px; top:75px; border-radius:60px; z-index:1;"></div>
-                <p style="z-index:2; position: absolute; top:150px; font-style: italic;">
-                    With Carsten you can <strong>carst</strong> content to screens within your network.<br>
-                </p>
-            </div>
-        </div>
-    <div style="position:absolute; width:358px; height:203px; right:0; top:180px; text-align: center; border:1px solid #cccccc;">
-        <div style="position:absolute; left:110px; top:90px; margin:auto;" ng-if="!capture[channel]" id="fountainG">
-            <div id="fountainG_1" class="fountainG">
-            </div>
-            <div id="fountainG_2" class="fountainG">
-            </div>
-            <div id="fountainG_3" class="fountainG">
-            </div>
-            <div id="fountainG_4" class="fountainG">
-            </div>
-            <div id="fountainG_5" class="fountainG">
-            </div>
-            <div id="fountainG_6" class="fountainG">
-            </div>
-            <div id="fountainG_7" class="fountainG">
-            </div>
-            <div id="fountainG_8" class="fountainG">
-            </div>
-        </div>
-        <span style="font-weight:bold; position:absolute; right:3px; bottom:3px; background-color:#fff;">Preview Picture</span>
-        <img ng-if="capture[channel]" style=" width:355px; height:200px;"  src="data:image/png;base64,{{capture[channel].buff}}" />
     </div>
 
 
-    <div style="position:relative;">
-            <input id="carst_input" type="text" style="width:calc(100% - 40px); height:50px; font-size:25px; display:inline-block;" ng-model="input"
-                   ng-keyup="inputKeyup($event)" class="form-control" placeholder="Enter an URL :)">
-            <span class="glyphicon glyphicon-question-sign help" style="position:absolute; right:0; top:13px; height:auto; font-size:25px; display:inline-block;" title="You can cast URLs: http://sap.com or www.sap.com &#8212 You can cast app sites: app://index&#8212You can cast playlists: playlist://title &#8212; It's also possible to send commands like maximize or refresh"></span>
+    <!--   <div class="dropdown" style="float:right;">
+           <strong>You are on</strong>
+           <button class="btn dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown">
+               <span ng-bind="channel"></span>
+               <span class="caret"></span>
+           </button>
+           <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu1">
+               <li role="presentation"><a role="menuitem" tabindex="-1" href="#" ng-repeat="channel in channels"
+                                          ng-click="setChannel(channel)">{{channel}}</a></li>
+           </ul>
+       </div>-->
 
-            <div style="position:absolute; left:0; top:60px;">Options: <input type="text"
-                                                                              style="width:87px; display:inline-block;"
-                                                                              ng-model="inputDuration"
-                                                                              ng-keyup="inputKeyup($event)"
-                                                                              class="form-control" placeholder="hh:mm:ss" />
-                <button style="margin-left:10px; margin-top:-5px; background-color: #FAF3ED;" type="button" class="btn" ng-click="openFileDialoag()"><span class="glyphicon glyphicon-camera"></span> Upload an image</button>
-                <input style="visibility: hidden;" id="imagefile" type="file" />
-            </div>
-            <button style="position:absolute; left:320px; top:60px; background-color: #FAF3ED;" type="button" class="btn"
-                    ng-click="carst(true)">
-                <span class="glyphicon glyphicon-play"></span> Play Immediately</button>
-            <button style="position:absolute; right:0; top:60px; background-color:#FAEADC;" type="button" class="btn"
-                    ng-click="carst(false)">
-                <span class="glyphicon glyphicon-tasks"></span> Append to Queue</button>
+    <!--<div style="text-align:center;">
+        <div class="head-circle" style="z-index:0;">
+            <div style="position: absolute; left:30px; z-index:2;" class="heading">Carsten &#10084;</div>
+            <span style="opacity:0.6; font-size:1.8em; position: absolute; top:220px; right:-28px; z-index:2;"
+                  class="label label-danger">Beta</span>
+
+            <div style="width: 60px; height:60px; background-color:#FBDFC9; position: absolute; left:100px; top:75px; border-radius:60px; z-index:1;"></div>
+            <div style="width: 60px; height:60px; background-color:#FBDFC9; position: absolute; right:100px; top:75px; border-radius:60px; z-index:1;"></div>
+            <p style="z-index:2; position: absolute; top:150px; font-style: italic;">
+                With Carsten you can <strong>carst</strong> content to screens within your network.<br>
+            </p>
         </div>
-        <br/><br/><br/><br/><br/><br/>
+    </div>-->
+    <div style="position:relative; margin:20px auto 100px auto; width:698px; height:396px; text-align: center; border:1px solid #cccccc; background-color:rgba(100,100,100,0.5);">
+        <!-- <span style="font-weight:bold; position:absolute; right:3px; bottom:3px; background-color:rgba(255,255,255,0.6);">Preview Picture</span>-->
+        <img ng-if="capture[channel]" style=" width:696px; height:394px;"
+             src="data:image/png;base64,{{capture[channel].buff}}"/>
+    </div>
+
+
+        <!--<div style="position:absolute; left:0; top:60px;">Options: <input type="text"
+                                                                          style="width:87px; display:inline-block;"
+                                                                          ng-model="inputDuration"
+                                                                          ng-keyup="inputKeyup($event)"
+                                                                          class="form-control"
+                                                                          placeholder="hh:mm:ss"/> </div> -->
+        <!--<button style="margin-left:10px; margin-top:-5px; background-color: #FAF3ED;" type="button" class="btn"
+                ng-click="openFileDialoag()"><span class="glyphicon glyphicon-camera"></span> Upload an image
+        </button>-->
+
+        <!-- <button style="position:absolute; left:320px; top:60px; background-color: #FAF3ED;" type="button"
+                 class="btn"
+                 >
+             <span class="glyphicon glyphicon-play"></span> Play Immediately
+         </button>
+         <button style="position:absolute; right:0; top:60px; background-color:#FAEADC;" type="button" class="btn"
+                 ng-click="carst(false)">
+             <span class="glyphicon glyphicon-tasks"></span> Append to Queue
+         </button> -->
+    </div>
+
+<div id="detailscreen" style="text-align: center; max-width:100%;">
+
+<div style="position:relative; margin-top:5vh; text-align:center; width:100%;">
+<div style="position: relative; width:1000px; margin:auto;">
+    <button style="position:absolute; height:50px; font-size:25px; right:705px; margin-right:150px; top:0px;  border-right:1px solid #ccc !important;"
+            class="btn dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown">
+        <span ng-bind="channel"></span>
+        <span class="caret"></span>
+    </button>
+    <ul class="dropdown-menu" role="menu" aria-labelledby="dropdownMenu1">
+        <li role="presentation"><a role="menuitem" tabindex="-1" href="#" ng-repeat="channel in channels"
+                                   ng-click="setChannel(channel)">{{channel}}</a></li>
+    </ul>
+    <input id="carst_input" type="text"
+           style="width:698px;margin-right:-30px; height:50px; font-size:25px; display:inline-block;"
+           ng-model="input"
+           ng-keyup="inputKeyup($event)" class="form-control" placeholder="Enter an URL :)">
+
+    <div ng-click="openFileDialoag()"
+         style="display:inline-block;cursor:pointer; position:relative; opacity:0.7; right:28px; top:4px; width:40px; height:40px; color:grey; text-align: center; font-size:28px; line-height: 38px;">
+        <span class="glyphicon glyphicon-camera"></span></div>
+    <input style="visibility: hidden;" id="imagefile" type="file"/>
+
+    <div ng-click="carst(true)"
+         style="display:inline-block;cursor:pointer; position:relative; left:365px; top:-73px; width:50px; height:50px; background-color:#577C6F; color:#fff; text-align: center; font-size:20px; line-height: 50px;">
+        <span class="glyphicon glyphicon-play"></span></div>
+    <!--<div ng-click="carst(false)" style="cursor:pointer; position:absolute; right:30px; top:4px; width:40px; height:40px; background-color:#64B5F6; color:#fff; text-align: center; font-size:28px; line-height: 38px;"><span class="glyphicon glyphicon-plus"></span></div>-->
+</div>
+<div style="margin-top:-35px;">
+    <input style="width:698px;" id="ex8" data-slider-id='ex1Slider' type="text" data-slider-min="1" data-slider-max="60"
+           data-slider-step="1" data-slider-value="30"/>
+</div>
+
+<div class="holder">
+    <div class="wrapper">
+        <div class="container" ng-click="menu(0, $event)">Events</div>
+    </div>
+    <div class="wrapper">
+        <div class="container container-active"  ng-click="menu(1, $event)">Carsten</div>
+    </div>
+    <div class="wrapper">
+        <div class="container" ng-click="menu(2, $event)">Playlists</div>
+    </div>
+</div>
+
+<div id="detailscreen-container">
+
+<!-- <div style="position: relative;">
+   <h3>Carsts Queue
+        <small> &#8212; {{channel}}, {{countReceivers[channel] > 1 ? countReceivers[channel] + ' receivers' :
+            (countReceivers[channel] == 1 ? countReceivers[channel] + ' receiver' : 'no receivers')}}
+        </small>
+    </h3>
+
+    <div id="toggleMaximize"
+         style="position:absolute; cursor: pointer; font-size:24px; top:0; right:0; display:inline-block;"
+         ng-click="maximize()">
+        <small>Fullscreen</small>
+        <span class="glyphicon glyphicon-fullscreen"></span></div>
+    <div style="position:absolute; cursor: pointer; font-size:24px; top:0; right:135px; display:inline-block;"
+         ng-click="setBack()">
+        <small>Refresh</small>
+        <span class="glyphicon glyphicon-refresh"></span></div>
+    <div style="position:absolute; cursor: pointer; font-size:24px; top:0; right:245px; display:inline-block;"
+         ng-click="clearQueue()">
+        <small>Clear</small>
+        <span class="glyphicon glyphicon-trash"></span></div>
+</div> -->
+
+<div ng-show="carsts[channel].length == 0 && show == 1" style="position: relative;">
+    <div class="nono carst-item no-item">No casts available.</div>
+</div>
+<div ng-show="carsts[channel].length > 0  && show == 1" class="panel panel-default">
+    <div id="l-carsts" style="position:relative;">
+        <div class="carst-item" ng-repeat="carst in carsts[channel]" ng-class="$index == 0 ? 'active-carst' : ''">
             <div style="position: relative;">
-                    <h3>Carsts Queue <small> &#8212; {{channel}}, {{countReceivers[channel] > 1 ? countReceivers[channel] + ' receivers' : (countReceivers[channel] == 1 ? countReceivers[channel] + ' receiver' : 'no receivers')}}</small></h3>
-
-                    <div id="toggleMaximize" style="position:absolute; cursor: pointer; font-size:24px; top:0; right:0; display:inline-block;"
-                         ng-click="maximize()"><small>Fullscreen</small> <span class="glyphicon glyphicon-fullscreen"></span></div>
-                     <div style="position:absolute; cursor: pointer; font-size:24px; top:0; right:135px; display:inline-block;"
-                     ng-click="setBack()"><small>Refresh</small> <span class="glyphicon glyphicon-refresh"></span></div>
-                <div style="position:absolute; cursor: pointer; font-size:24px; top:0; right:245px; display:inline-block;"
-                     ng-click="clearQueue()"><small>Clear</small> <span class="glyphicon glyphicon-trash"></span></div>
-            </div>
-
-        <div ng-show="carsts[channel].length == 0">
-            <li class="list-group-item">No casts available.</li>
-        </div>
-        <div ng-show="carsts[channel].length > 0" class="panel panel-default">
-            <div id="l-carsts">
-                <div class="carst-item" ng-repeat="carst in carsts[channel]" ng-class="$index == 0 ? 'active-carst' : ''">
-                    <div style="position: relative;">
-                        <div style="position:absolute; left:10px; top:2px; display: inline-block; border-right:1px solid #cccccc; width:40px;">
-                            {{ carst.id }}
-                        </div>
-                        <div style="position:absolute; left:60px; top:2px; display: inline-block;"
-                             ng-bind-html="carst.title | to_html"></div>
-                        <div style="position:absolute; right:50px; top:2px; display: inline-block;">{{ carst.timeString
-                            }}
-                        </div>
-                        <div style="position:absolute; right:5px; top:3px; display: inline-block; cursor:pointer; width:10px;">
-                            <span ng-click="deleteCarst(carst, channel)" class="glyphicon glyphicon-remove"></span>
-                        </div>
-                    </div>
+               <!-- <div style="position:absolute; left:10px; top:2px; display: inline-block; border-right:1px solid #cccccc; width:40px;">
+                    {{ carst.id }}
+                </div> -->
+                <div style="position:absolute; left:-28px; top:-12px; display: inline-block;"
+                     ng-bind-html="carst.title | to_html"></div>
+                <div style="position:absolute; right:50px; top:-12px; display: inline-block;">{{ carst.timeString
+                    }}
+                </div>
+                <div style="position:absolute; right:5px; top:-12px; display: inline-block; cursor:pointer; width:10px;">
+                    <span ng-click="deleteCarst(carst, channel)" class="glyphicon glyphicon-remove"></span>
                 </div>
             </div>
-        </div>
-        <br />
-        <button id="more_button" class="btn" ng-click="showMore()"><span class="glyphicon glyphicon-chevron-down"></span> Show more...</button>
-        <div id="extended" style="display:none;">
-        <h3>Default carst</h3>
-
-        <div class="form-group" style="display:inline-block;">
-            <input type="text" style="width:300px;" ng-model="defaultCarst[channel].url" class="form-control"
-                   placeholder="Enter something :)">
-        </div>
-        <div class="btn-group" style="display:inline-block;">
-            <button style="margin-top:-4px;" type="button" class="btn"
-                    ng-click="setDefault(defaultCarst[channel].url, channel)">
-                <span class="glyphicon glyphicon-floppy-disk"></span> Set
-            </button>
-        </div>
-        <!-- Modal -->
-        <div class="modal fade" id="openPlaylistModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
-             aria-hidden="true">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span
-                                class="sr-only">Close</span></button>
-                        <h4 class="modal-title" id="myModalLabel">Your playlist</h4>
-                    </div>
-                    <div class="modal-body" style="padding:20px 50px;">
-                        <input id="playlistTitle" class="contenteditable" ng-model="openPlaylist.title"/>
-                        <ul class="list-group">
-                            <div id="openPlaylist">
-                                <li class="playlist-item list-group-item" ng-repeat="carst in openPlaylist.carsts">
-                                    <span ng-bind-html="openPlaylist.carsts[$index].title | to_html"></span>
-                                    <input style="display:inline-block;" class="vabsolutep newCarst contenteditable"
-                                               ng-model="openPlaylist.carsts[$index].url" />
-                                    <input type="text" style="right:40px; height:35px; width:66px; display:inline-block; outline:0;"
-                                           class="vabsolutep contenteditable" ng-model="openPlaylist.carsts[$index].timeString" />
-                                    <div style="cursor:pointer; position:absolute; right:10px; top:10px; display:inline-block;"
-                                         ng-click="removeCarstFromPlaylist($index)"><span class="glyphicon glyphicon-remove"></span>
-                                    </div>
-                                </li>
-                            </div>
-                            <div style="cursor:pointer; display:inline-block; position: absolute; right:0; margin-right:50px; margin-top:8px;"
-                                 ng-click="appendCarstToPlaylist()"><span class="glyphicon glyphicon-plus"></span> Carst
-                            </div>
-                        </ul>
-                    </div>
-                    <div class="modal-footer">
-                        <div id="openPlaylistSuccess" class="alert alert-success" role="alert">Well done, the playlist
-                            was successfully added to the database!
-                        </div>
-                        <div id="openPlaylistError" class="alert alert-danger" role="alert">Something is wrong! Please
-                            check your inputs!
-                        </div>
-                        <button type="button" class="btn" data-dismiss="modal"><span
-                                class="glyphicon glyphicon-remove"></span> Close
-                        </button>
-                        <button type="button" class="btn" ng-click="savePlaylist()"><span
-                                class="glyphicon glyphicon-floppy-disk"></span> Save changes
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div style="position: relative;">
-            <h3>Available Playlists</h3>
-
-            <div style="position:absolute; cursor: pointer; font-size:24px; top:0; right:0; display:inline-block;"
-                 ng-click="resetPlaylist()" data-toggle="modal" data-target="#openPlaylistModal"><small>Add</small> <span
-                    class="glyphicon glyphicon-plus"></span></div>
-        </div>
-        <div ng-show="playlists.length == 0">
-            <li class="list-group-item">No playlists available.</li>
-        </div>
-        <div ng-show="playlists.length > 0" class="panel panel-default">
-            <div class="panel-body">
-                <div ng-repeat="playlist in playlists" ng-class="$index !== 0 ? 'borderTop' : ''"
-                     style="position: relative;">
-                    <div style="margin:10px;">
-                        <div>
-                            <div style="display:inline; font-size:1.2em;"><strong>{{ playlist.title }}</strong></div>
-                            <div style="position:absolute; right: 40px; display: inline-block; cursor: pointer;"
-                                 ng-click="play($index)"><span class="glyphicon glyphicon-play"></span></div>
-                            <div style="position:absolute; right: 20px; display: inline-block; cursor: pointer;"
-                                 data-toggle="modal" data-target="#openPlaylistModal" ng-click="editPlaylist($index)"><span class="glyphicon glyphicon-pencil"></span></div>
-                            <div style="cursor:pointer; position:absolute; right:0; display:inline;"
-                                 ng-click="removePlaylist($index)"><span class="glyphicon glyphicon-remove"></span>
-                            </div>
-                        </div>
-                        <div ng-repeat="carst in playlist.carsts" style="position: relative; margin-top:6px;">
-                            <div style="position:absolute; left:10px; display: inline-block; width:40px;">{{ carst.id
-                                }}
-                            </div>
-                            <div style="margin-left:40px; display: inline-block;"
-                                 ng-bind-html="carst.title | to_html"></div>
-                            <div style="position:absolute; right: 50px; display: inline-block;">{{ carst.timeString }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div style="position: relative;">
-            <h3>Daily Events</h3>
-
-            <div style="position:absolute; cursor: pointer; font-size:24px; top:0; right:0; display:inline-block;"
-                 ng-click="addEvent()"><small>Add</small> <span class="glyphicon glyphicon-plus"></span></div>
-        </div>
-        <div ng-show="events[channel].length == 0">
-            <li class="list-group-item">No events available.
-                <div ng-if="addEventStatus && events[channel].length == 0" style="height:60px;">
-                    <div style="position: relative;">
-                        <h4 class="borderBottom">Add a daily event</h4>
-                        <input id="newevent_url" class="contenteditable"
-                               style="position:absolute; margin:0; left:0; top:33px; width:400px; display: inline-block;"
-                               value="{{newEvent.url}}"/>
-                        <input id="newevent_clock"
-                               style="position:absolute; width:45px; right:350px; top:33px; margin:0; display: inline-block;"
-                               class="contenteditable" value="{{timeZone(newEvent.clock)}}"/>
-                        <small style="position:absolute; right:310px; top:40px; display: inline-block;">o'clock</small>
-                        <input id="newevent_duration"
-                               style="position:absolute; right:226px; width:45px; margin:0; top:33px; display: inline-block;"
-                               class="contenteditable" value="{{newEvent.duration}}"/>
-
-                        <div style="position:absolute; right:110px; top:31px; display: inline-block; width:80px;">
-                            <button type="button" class="btn" ng-click="saveEvent()"><span
-                                    class="glyphicon glyphicon-floppy-disk"></span> Save
-                            </button>
-                        </div>
-                        <div style="position:absolute; right:20px; top:31px; display: inline-block; width:80px;">
-                            <button type="button" class="btn" ng-click="cancelEvent()"><span
-                                    class="glyphicon glyphicon-remove"></span> Cancel
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </li>
-        </div>
-        <div ng-show="events[channel].length > 0" class="panel panel-default">
-            <div class="panel-body">
-                <div ng-repeat="event in events[channel] | orderBy:['eventHour','eventMin']" style="height:45px;"
-                     ng-class="$index !== 0 ? 'borderTop' : ''">
-                    <div style="position: relative;">
-                        <div style="position:absolute; left:10px; top:12px; display: inline-block; border-right:1px solid #cccccc; width:40px;">
-                            {{ event.eventCarst.id }}
-                        </div>
-                        <div style="position:absolute; left:60px; top:12px; display: inline-block;"
-                             ng-bind-html="event.eventCarst.title | to_html"></div>
-                        <div style="position:absolute; right:150px; top:12px; display: inline-block;">{{ timeZone(('0' +
-                            event.eventHour).slice(-2) + ':' + ('0' + event.eventMin).slice(-2)) }}
-                            <small>o'clock</small>
-                        </div>
-                        <div style="position:absolute; right:50px; top:12px; display: inline-block;">{{
-                            event.eventCarst.timeString }}
-                        </div>
-                        <div style="cursor:pointer; position:absolute; right:5px; top:12px; display: inline-block; width:10px;">
-                            <span ng-click="removeEvent($index)" class="glyphicon glyphicon-remove"></span>
-                        </div>
-                    </div>
-                </div>
-                <div ng-if="addEventStatus" style="height:60px;">
-                    <div style="position: relative;">
-                        <h4 class="borderBottom">Add a daily event</h4>
-                        <input id="newevent_url" class="contenteditable"
-                               style="position:absolute; margin:0; left:0; top:33px; width:400px; display: inline-block;"
-                               value="{{newEvent.url}}"/>
-                        <input id="newevent_clock"
-                               style="position:absolute; width:45px; right:350px; top:33px; margin:0; display: inline-block;"
-                               class="contenteditable" value="{{newEvent.clock}}"/>
-                        <small style="position:absolute; right:310px; top:40px; display: inline-block;">o'clock</small>
-                        <input id="newevent_duration"
-                               style="position:absolute; right:226px; width:45px; margin:0; top:33px; display: inline-block;"
-                               class="contenteditable" value="{{newEvent.duration}}"/>
-
-                        <div style="position:absolute; right:110px; top:31px; display: inline-block; width:80px;">
-                            <button type="button" class="btn" ng-click="saveEvent()"><span
-                                    class="glyphicon glyphicon-floppy-disk"></span> Save
-                            </button>
-                        </div>
-                        <div style="position:absolute; right:20px; top:31px; display: inline-block; width:80px;">
-                            <button type="button" class="btn" ng-click="cancelEvent()"><span
-                                    class="glyphicon glyphicon-remove"></span> Cancel
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div ng-if="addEventStatus" id="newEventSuccess" style="padding-left:13px; padding-right:13px; margin-top:15px;" class="alert alert-success" role="alert">Well done,
-                the event was successfully added to the database!
-            </div>
-            <div ng-if="addEventStatus" id="newEventError" style=" margin-left:13px; margin-right:13px; margin-top:15px;" class="alert alert-danger" role="alert">Something is
-                wrong! Please check your inputs!
-            </div>
-        </div>
-        <h3>Commands history (max. 5)</h3>
-
-        <div ng-show="commands[channel].length == 0">
-            <li class="list-group-item">No commands.</li>
-        </div>
-        <div ng-show="commands[channel].length > 0" class="panel panel-default">
-            <div class="panel-body">
-                <div ng-repeat="command in commands[channel] | orderBy : 'id' : true | limitTo:5 " style="height:45px;"
-                     ng-class="$index !== 0 ? 'borderTop' : ''">
-                    <div style="position: relative;">
-                        <div style="position:absolute; left:10px; top:12px; display: inline-block;">{{ command.command
-                            }}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
         </div>
     </div>
 </div>
-</body>
-</html>
+<!--<h3>Default carst</h3>
+
+<div class="form-group" style="display:inline-block;">
+    <input type="text" style="width:300px;" ng-model="defaultCarst[channel].url" class="form-control"
+           placeholder="Enter something :)">
+</div>
+<div class="btn-group" style="display:inline-block;">
+    <button style="margin-top:-4px;" type="button" class="btn"
+            ng-click="setDefault(defaultCarst[channel].url, channel)">
+        <span class="glyphicon glyphicon-floppy-disk"></span> Set
+    </button>
+</div> -->
+<!-- Modal -->
+<div class="modal fade" id="openPlaylistModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+     aria-hidden="true" style="font-size:1.2em;">
+    <div class="modal-dialog modal-lg" >
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span
+                        class="sr-only">Close</span></button>
+                <h4 class="modal-title" id="myModalLabel">Your playlist</h4>
+            </div>
+            <div class="modal-body" style="padding:20px 50px; text-align:left;">
+                <input id="playlistTitle" class="contenteditable" ng-model="openPlaylist.title"/>
+                <ul class="list-group">
+                    <div id="openPlaylist">
+                        <li class="playlist-item list-group-item" ng-repeat="carst in openPlaylist.carsts">
+                            <span ng-bind-html="openPlaylist.carsts[$index].title | to_html"></span>
+                            <input style="display:inline-block;" class="vabsolutep newCarst contenteditable"
+                                   ng-model="openPlaylist.carsts[$index].url"/>
+                            <input type="text"
+                                   style="right:40px; height:35px; width:66px; display:inline-block; outline:0;"
+                                   class="vabsolutep contenteditable"
+                                   ng-model="openPlaylist.carsts[$index].timeString"/>
+
+                            <div style="cursor:pointer; position:absolute; right:10px; top:10px; display:inline-block;"
+                                 ng-click="removeCarstFromPlaylist($index)"><span
+                                    class="glyphicon glyphicon-remove"></span>
+                            </div>
+                        </li>
+                    </div>
+                    <div style="cursor:pointer; display:inline-block; position: absolute; right:0; margin-right:50px; margin-top:8px;"
+                         ng-click="appendCarstToPlaylist()"><span class="glyphicon glyphicon-plus"></span> Carst
+                    </div>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <div id="openPlaylistSuccess" class="alert alert-success" role="alert">Well done, the playlist
+                    was successfully added to the database!
+                </div>
+                <div id="openPlaylistError" class="alert alert-danger" role="alert">Something is wrong! Please
+                    check your inputs!
+                </div>
+                <button type="button" class="btn" data-dismiss="modal"><span
+                        class="glyphicon glyphicon-remove" style="color:rgb(90, 85, 85);"></span> Close
+                </button>
+                <button type="button" class="btn" ng-click="savePlaylist()"><span
+                        class="glyphicon glyphicon-floppy-disk"></span> Save changes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+    <!--<div style="position: relative;">
+        <h3>Available Playlists</h3>
+
+        <div style="position:absolute; cursor: pointer; font-size:24px; top:0; right:0; display:inline-block;"
+             ng-click="resetPlaylist()" data-toggle="modal" data-target="#openPlaylistModal">
+            <small>Add</small> <span
+                class="glyphicon glyphicon-plus"></span></div>
+</div> -->
+<div ng-show="playlists.length == 0  && show == 2">
+    <div class="button" style="cursor: pointer; margin-bottom:25px; font-size:24px; display:block;"
+         ng-click="resetPlaylist()" data-toggle="modal" data-target="#openPlaylistModal">
+        <small><span class="glyphicon glyphicon-plus"></span> Add New</small></div>
+    <div class="nono carst-item no-item">No playlists available.</div>
+</div>
+<div ng-show="playlists.length > 0  && show == 2" class="panel panel-default">
+    <div class="button" style="cursor: pointer; margin-bottom:25px; font-size:24px; display:block;"
+         ng-click="resetPlaylist()" data-toggle="modal" data-target="#openPlaylistModal">
+        <small><span class="glyphicon glyphicon-plus"></span> Add New</small></div>
+    <div class="panel-body" style="text-align: left;">
+        <div ng-repeat="playlist in playlists" class="playlist-item carst-item no-item"
+             style="position: relative; height:auto;">
+            <div style="margin:10px; margin-top:-10px;">
+                <div>
+                    <div style="margin-left:-30px; display:inline; font-size:1.2em;">
+                        <strong>{{ playlist.title }}</strong>
+                        <div style="display: inline-block; margin-left:5px; color:#577C6F; position: relative; top:2px; cursor: pointer;"
+                             ng-click="play($index)"><span class="glyphicon glyphicon-play"></span>
+                        </div>
+                        <div class="button" style="margin-left:15px; display: inline-block; cursor: pointer;"
+                             data-toggle="modal" data-target="#openPlaylistModal" ng-click="editPlaylist($index)">Edit</div>
+                    </div>
+
+
+                    <div style="cursor:pointer; position:absolute; right:20px; top:40px; display:inline;"
+                         ng-click="removePlaylist($index)"><span class="glyphicon glyphicon-remove"></span>
+                    </div>
+                </div>
+                <div ng-repeat="carst in playlist.carsts" style="position: relative; margin-top:6px;">
+                   <!-- <div style="position:absolute; left:10px; display: inline-block; width:40px;">{{ carst.id
+                        }}
+                    </div>-->
+                    <div style="margin-left:-20px; margin-top:20px; display: inline-block;"
+                         ng-bind-html="carst.title | to_html"></div>
+                    <div style="position:absolute; right: 50px; display: inline-block;">{{ carst.timeString }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!--<div style="position: relative;">
+    <h3>Daily Events</h3>
+
+</div>-->
+<div class="panel panel-default" ng-show="show == 0">
+    <div class="panel-body">
+        <div class="button" style="cursor: pointer; font-size:24px; display:block;"
+             ng-click="addEvent()">
+            <small><span class="glyphicon glyphicon-plus"></span> Add New</small></div>
+        <div ng-show="addEventStatus" >
+            <div style="position: relative; height:140px;" class="event-item carst-item">
+                <input id="newevent_url" class="contenteditable"
+                       style="position:absolute; margin:0; left:0; top:25px; width:400px; display: inline-block;"
+                       value="{{newEvent.url}}"/>
+                <input id="newevent_clock"
+                       style="position:absolute; width:65px; right:230px; top:25px; margin:0; display: inline-block;"
+                       class="contenteditable" value="{{newEvent.clock}}"/>
+                <small style="position:absolute; right:175px; top:30px; display: inline-block;">o'clock</small>
+               <!-- <input id="newevent_duration"
+                       style="position:absolute; right:226px; width:45px; margin:0; top:25px; display: inline-block;"
+                       class="contenteditable" value="{{newEvent.duration}}"/>-->
+
+                <div style="position:absolute; right:25px; top:75px; display: inline-block; width:80px;">
+                    <div class="button" ng-click="saveEvent()"><span
+                            class="glyphicon glyphicon-floppy-disk"></span> Save
+                    </div>
+                </div>
+                <div style="position:absolute; right:7px; top:31px; display: inline-block; width:80px;">
+                    <div style="cursor: pointer;" ng-click="cancelEvent()"><span
+                            class="glyphicon glyphicon-remove"></span></div>
+                </div>
+                <div style="position:absolute; left:200px; top:82px;">
+                    <input style="width:698px;" id="evslider" data-slider-id='evSlider' type="text" data-slider-min="1" data-slider-max="60"
+                           data-slider-step="1" data-slider-value="30"/>
+                </div>
+            </div>
+        </div>
+        <div ng-if="events[channel].length > 0" ng-repeat="event in events[channel] | orderBy:['eventHour','eventMin']" class="event-item carst-item">
+            <div style="position: relative;">
+               <!-- <div style="position:absolute; left:10px; top:12px; display: inline-block; border-right:1px solid #cccccc; width:40px;">
+                    {{ event.eventCarst.id }}
+                </div>-->
+                <div style="position:absolute; left:-36px; top:-12px; display: inline-block;"
+                     ng-bind-html="event.eventCarst.title | to_html"></div>
+                <div style="position:absolute; right:150px; top:-12px; display: inline-block;">{{ timeZone(('0' +
+                    event.eventHour).slice(-2) + ':' + ('0' + event.eventMin).slice(-2)) }}
+                    <small>o'clock</small>
+                </div>
+                <div style="position:absolute; right:50px; top:-12px; display: inline-block;">{{
+                    event.eventCarst.timeString }}
+                </div>
+                <div style="cursor:pointer; position:absolute; right:5px; top:-12px; display: inline-block; width:10px;">
+                    <span ng-click="removeEvent($index)" class="glyphicon glyphicon-remove"></span>
+                </div>
+            </div>
+        </div>
+        <div ng-if="events[channel].length == 0" class="nono carst-item no-item">No events available.</div>
+    </div>
+    <!--
+    <div ng-if="addEventStatus" id="newEventSuccess" style="padding-left:13px; padding-right:13px; margin-top:15px;"
+         class="alert alert-success" role="alert">Well done,
+        the event was successfully added to the database!
+    </div>
+    <div ng-if="addEventStatus" id="newEventError" style=" margin-left:13px; margin-right:13px; margin-top:15px;"
+         class="alert alert-danger" role="alert">Something is
+        wrong! Please check your inputs!
+    </div>-->
+</div>
+   <!--<h3>Commands history (max. 5)</h3>
+
+   <div ng-show="commands[channel].length == 0">
+       <li class="list-group-item">No commands.</li>
+   </div>
+   <div ng-show="commands[channel].length > 0" class="panel panel-default">
+       <div class="panel-body">
+           <div ng-repeat="command in commands[channel] | orderBy : 'id' : true | limitTo:5 " style="height:45px;"
+                ng-class="$index !== 0 ? 'borderTop' : ''">
+               <div style="position: relative;">
+                   <div style="position:absolute; left:10px; top:12px; display: inline-block;">{{ command.command
+                       }}
+                   </div>
+               </div>
+           </div>
+       </div>
+   </div> -->
+   </div>
+   </div>
+   </div>
+   </body>
+   </html>

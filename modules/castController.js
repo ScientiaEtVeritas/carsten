@@ -7,6 +7,8 @@ module.exports = function (context) {
 	/**********************************************************************************/
 	/**********************************************************************************/
 
+	var github;
+
 	// moongoose Schema for defaultCarst
 	var defaultCarstSchema = context.mongoose.Schema({
 		channel: String,
@@ -460,6 +462,7 @@ module.exports = function (context) {
 
 	// calculate time of sockets input
 	function getTime(inputDuration) {
+		var omos = /^(\d+)$/;
 		var remmss = /^(\d{1,2}):(\d{1,2})$/;
 		var reTime = /^(?:PT)?(?:(\d{1,2})[:.hH])?(?:(\d{1,4})[:.mM])?(?:(\d{1,6})[sS]?)?$/;
 
@@ -467,7 +470,10 @@ module.exports = function (context) {
 		var resultTime;
 		var timeString;
 
-		if(remmss.test(inputDuration)) {
+		if(omos.test(inputDuration)) {
+			match = (inputDuration + '').match(omos);
+			resultTime = (match[1] && +match[1]*60000 || 0);
+		} else if(remmss.test(inputDuration)) {
 			match = inputDuration.match(remmss);
 			resultTime = (match[1] && +match[1]*60000 || 0) + (match[2] && +match[2]*1000 || 0);
 		} else if(reTime.test(inputDuration)) {
@@ -615,6 +621,10 @@ module.exports = function (context) {
 				});
 			}
 			send_meme();
+		});
+
+		socket.on('getLatestGithub', function() {
+			socket.emit('sendLatestGithub', github);
 		});
 
 		/**************************************************************/
@@ -868,6 +878,8 @@ module.exports = function (context) {
 
 		socket.on('newEvent', function(data) {
 
+			console.log(data);
+
 			var channel = data.channel;
 			var url = data.eventCarst.url;
 			var clockTime = data.eventCarst.clock.split(':');
@@ -1097,6 +1109,37 @@ module.exports = function (context) {
 	/**********************************************************************************/
 	/**********************************************************************************/
 	/**********************************************************************************/
+
+	/**************************************************************/
+	/************************ GITHUB WEBHOOKS *********************/
+	/**************************************************************/
+
+	context.app.post('/github', function(req, res) {
+		var body = req.body;
+		github = body;
+		switch(body.action) {
+			case 'opened':
+				console.log('*** REPOSITORY ***');
+				console.log('Name: ' + body.repository.full_name);
+				console.log('Description: ' + body.repository.description);
+				console.log('*** ISSUE OPENED ***');
+				console.log('Title: ' + body.issue.title);
+				console.log('User: ' + body.issue.user.login);
+				console.log('Avatar: ' + body.issue.user.avatar_url);
+				console.log('Message: ' + body.issue.body);
+				//console.log('Labels: ', body.issue.labels[0].name, body.issue.labels[0].color);
+				break;
+			case 'labeled':
+				console.log('*** ISSUE LABELED ***');
+				break;
+			case 'reopened':
+				console.log('*** ISSUE REOPENED ***');
+				break;
+			case 'closed':
+				console.log('*** ISSUE CLOSED ***');
+				break;
+		}
+	});
 
 	/**************************************************************/
 	/************************* UPLOAD IMAGES **********************/
