@@ -88,21 +88,66 @@ There is another repository for the carsten receiver: https://github.com/carst-i
 
 You can install a carsten receiver on every device, so it's possible to install it on a Raspberry Pi connected to a TV for the best carsten experience.
 
-Install Chrome Extension
+Chrome Extension
 ------------------------
 
-Currently, we haven't published the chrome extension yet. You need to install it manually.
+We have a public chrome extension, so you can carst every tab with one click! Awesome!
 
- 1. Open your Carsten instance in the browser
- 2. Download the Chrome Extension as a .crx file
- 3. Open the .crx in a file browser
- 4. Open in Chrome: chrome://extensions
- 5. Drag the .crx file into the Chrome Window
-
-Use The Chrome Extension
-------------------------
+You can download the chrome extension for carsten from: https://chrome.google.com/webstore/detail/carsten/iajlnlmlcidjdpjgdjkkopijgfellabb
 
  1. If you want to carst a Browser Tab, you can click on the Monitor Icon on the upper-right corner.
  2. You have to set up the Carsten endpoint once. You can set up more than one Carsten endpoint. Enter your Carsten URL and a channel at Configuration and click "Add new configuration".
  3. Now you can click on that specific configuration to carst a tab to all receivers that have subcribed to the channel you have provided on that endpoint.
  4. After carsting something, the carsts queue appears and you can change positions of carsts or delete them.
+ 5. 
+ 
+Carsten Plugins
+--------------------------
+
+You want to manipulate time duration, title or icon of the carst? Then you can place your new plugin in the "plugin"-folder of carsten with a unique file name, it's at the same time the plugin name.
+
+In that file you have to create an regular expression to match against the user input string.
+
+Example of url.js:
+
+```
+this.expression = new RegExp("^((http|https)://)|(www.)", "i");
+```
+
+Than you need to create a function executed after a successful matching. That function has params and a callback as that parameters. 
+
+```
+this.fn = function(params, callback) {};
+```
+
+The params object has the following attributes:
+
+```
+context: for the access to the socket connection, http request, database etc.
+match: match array of your created expression
+input: input string of user (e.g. an url, a playlist)
+inputDuration: duration set by the user
+channel: selected channel
+```
+
+The callback you have to execute needs your manipulated data in the following pattern:
+
+```
+callback({
+    status: true,
+    info: {
+         icon: '',
+         title: '',
+         duration: '',
+         url: ''
+     }
+ });
+```
+
+In fatal error cases you can callback this:
+
+```
+callback({
+    status: false
+ });
+```
