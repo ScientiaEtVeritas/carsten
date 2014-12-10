@@ -7,17 +7,21 @@
 		<script src="/socket.io/socket.io.js"></script>
 		<script>
 
-			var todaysLunch;
+			var parameters = location.search.substring(1).split("&");
+
+			var temp = parameters[0].split("=");
+			channel = unescape(temp[1]);
 
 			var app = angular.module('app', []);
 
 			app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$window',
 				function ($scope, $location) {
 					var socket = io.connect($location.origin);
-					socket.emit('getLatestGithub');
+					socket.emit('getLatestGithub', channel);
 					socket.on('sendLatestGithub', function(data) {
 						$scope.$apply(function() {
-							$scope.data = data;
+							$scope.event = data.event;
+							$scope.data = data.body;
 						});
 					});
 				}]);
@@ -29,23 +33,49 @@
 	<div ng-if="!data" style="padding:5vh;">
 		<img src="github-logo.png" style="height:65vh;" /><br /><img src="github-sign.png" style="height:25vh;" />
 	</div>
-		<div ng-if="data" style="text-align:left; width:100vw; height:100vh;">
-			<div style="position:absolute; top:4vh; left:5vh;"><img style="height:10%;" src="github-logo.png" /><img style="height:10%;" src="github-sign.png" /></div>
-			<h1 style="position:absolute; top:15vh; left:18vh;"><small>Repository:</small> <span style="background-color:#46b8da; color:#fff;">{{ data.repository.full_name}}</span> <small>&mdash; {{data.repository.description}}</small></h1>
-			<div style="position:absolute; top:23vh; right:12vh;"  ng-switch="data.action">
-				<div ng-switch-default>
-					<h2><span style="background-color:#770000; color:#fff;">Issue {{data.action}}</span> by <img style="height:5vh; position:relative; top:1vh;" ng-src="{{data.issue.user.avatar_url}}" /> <span style="color:#F19A7B;">{{data.issue.user.login}}</span></h2>
+
+	<div ng-switch="event">
+		<div ng-switch-when="issues">
+			<div ng-if="data" style="text-align:left; width:100vw; height:100vh;">
+				<div style="position:absolute; top:4vh; left:5vh;"><img style="height:10%;" src="github-logo.png" /><img style="height:10%;" src="github-sign.png" /></div>
+				<h1 style="position:absolute; top:15vh; left:18vh;"><small>Repository:</small> <span style="background-color:#46b8da; color:#fff;">{{ data.repository.full_name}}</span> <small>&mdash; {{data.repository.description}}</small></h1>
+				<div style="position:absolute; top:23vh; right:12vh;"  ng-switch="data.action">
+					<div ng-switch-default>
+						<h2><span style="background-color:#770000; color:#fff;">Issue {{data.action}}</span> by <img style="height:5vh; position:relative; top:1vh;" ng-src="{{data.issue.user.avatar_url}}" /> <span style="color:#F19A7B;">{{data.issue.user.login}}</span></h2>
+					</div>
+				</div>
+			</div>
+			<div ng-if="data" style="position:absolute; bottom:0; height:50vh; width:80vw; margin-left:10vw; margin-right:10vw; background-color:#000; color:white;">
+				<div>
+					<h2>{{data.issue.title}} <span ng-repeat="label in data.issue.labels" ng-style="{'color':label.color}">[{{label.name}}] </span></h2>
+					<div style="padding:3vh; text-align:left; box-sizing:border-box; background-color:white; color:black; height:50vh; width:80vw;">
+						<h3 style="margin-top:-2vh; " ng-if="data.issue.body">{{data.issue.body}}</h3>
+						<h3 style="margin-top:-2vh; " ng-if="!data.issue.body">no description</h3>
+					</div>
 				</div>
 			</div>
 		</div>
-		<div ng-if="data" style="position:absolute; bottom:0; height:50vh; width:80vw; margin-left:10vw; margin-right:10vw; background-color:#000; color:white;"  ng-switch="data.action">
-			<div ng-switch-default>
-				<h2>{{data.issue.title}} <span ng-repeat="label in data.issue.labels" ng-style="{'color':label.color}">[{{label.name}}] </span></h2>
-				<div style="padding:3vh; text-align:left; box-sizing:border-box; background-color:white; color:black; height:50vh; width:80vw;">
-					<h3 style="margin-top:-2vh; " ng-if="data.issue.body">{{data.issue.body}}</h3>
-					<h3 style="margin-top:-2vh; " ng-if="!data.issue.body">no description</h3>
+		<div ng-switch-when="issue_comment">
+			<div ng-if="data" style="text-align:left; width:100vw; height:100vh;">
+				<div style="position:absolute; top:4vh; left:5vh;"><img style="height:10%;" src="github-logo.png" /><img style="height:10%;" src="github-sign.png" /></div>
+				<h1 style="position:absolute; top:15vh; left:18vh;"><small>Repository:</small> <span style="background-color:#46b8da; color:#fff;">{{ data.repository.full_name}}</span> <small>&mdash; {{data.repository.description}}</small></h1>
+				<div style="position:absolute; top:23vh; right:12vh;"  ng-switch="data.action">
+					<div ng-switch-default>
+						<h2><span style="background-color:#770000; color:#fff;">Issue Comment {{data.action}}</span> by <img style="height:5vh; position:relative; top:1vh;" ng-src="{{data.issue.user.avatar_url}}" /> <span style="color:#F19A7B;">{{data.issue.user.login}}</span></h2>
+					</div>
+				</div>
+			</div>
+			<div ng-if="data" style="position:absolute; bottom:0; height:50vh; width:80vw; margin-left:10vw; margin-right:10vw; background-color:#000; color:white;">
+				<div>
+					<h2>{{data.issue.title}} <span ng-repeat="label in data.issue.labels" ng-style="{'color':label.color}">[{{label.name}}] </span></h2>
+					<div style="padding:3vh; text-align:left; box-sizing:border-box; background-color:white; color:black; height:50vh; width:80vw;">
+						<h3 style="margin-top:-2vh; " ng-if="data.comment.body">{{data.comment.body}}</h3>
+						<h3 style="margin-top:-2vh; " ng-if="!data.comment.body">no description</h3>
+					</div>
 				</div>
 			</div>
 		</div>
+	</div>
+
 	</body>
 </html>
