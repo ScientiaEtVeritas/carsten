@@ -12,16 +12,16 @@
 
                     var youtube = JSON.parse(unescape(data));
                     if (youtube && youtube.pageInfo && youtube.pageInfo.totalResults > 0) {
-                        var icon = '<span class="glyphicon glyphicon-facetime-video"></span> ';
                         var title = youtube.items[0].snippet.title;
                         var duration = youtube.items[0].contentDetails.duration;
 
                         callback({
                             status: true,
                             info: {
-                                icon: icon,
+                                icon: '<img style="position:relative; top:-3px;" src="http://www.google.com/s2/favicons?domain=http://youtube.de" />',
                                 title: title,
-                                duration: duration
+                                duration: duration,
+                                url: 'http://www.youtube.com/embed/' + params.match[7] + '?hd=1?&autoplay=1&rel=0&showinfo=0&disablekb=1&controls=0&modestbranding=1&iv_load_policy=3'
                             }
                         });
                     } else {

@@ -14,6 +14,7 @@ context.sockets    = [];
 context.rest       = new require('node-rest-client').Client();
 context.mongoose   = require('mongoose');
 context.http       = require('http');
+context.cheerio	   = require('cheerio');
 
 console.log('\n\n   ██████╗ █████╗ ██████╗ ███████╗████████╗███████╗███╗   ██╗\n'+
 '  ██╔════╝██╔══██╗██╔══██╗██╔════╝╚══██╔══╝██╔════╝████╗  ██║\n'+
@@ -57,7 +58,7 @@ context.db.once('open', function callback () {
 
 	console.log('\n*------ LOAD PLUGINS ------*');
 
-	context.plugins = [{name:'youtube'}, {name:'vimeo'}];
+	context.plugins = [{name:'youtube'}, {name:'vimeo'}, {name:'url'}];
 	context.pluginPath = './plugins';
 	context.consolePlugins = '';
 
