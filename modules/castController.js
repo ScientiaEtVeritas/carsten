@@ -237,6 +237,14 @@ module.exports = function (context) {
 		return str;
 	}
 
+	// format seconds to 5h 04' 33"
+	function newFormatTime(sec, withSec) {
+		var hours = Math.floor(sec/3600);
+		var minutes = Math.floor((sec - (hours * 3600))/60);
+		var seconds = sec - (minutes * 60 + hours * 3600);
+		return (hours > 0 ? hours+'h ' : '') + (minutes > 0 ? ('0' + Math.round(minutes)).slice(-2) + "' " : '') + (seconds > 0 && withSec ? ('0' + Math.round(seconds)).slice(-2)+'"' : '');
+	}
+
 	// returns index of object by value of a key
 	function indexOfObject(array, key, value) {
 		if(array) {
@@ -364,15 +372,17 @@ module.exports = function (context) {
 	/**************************************************************/
 
 	// loop through plugins
-	function processPlugins(input, callback) {
+	function processPlugins(carst, callback) {
 		var processed = false;
 		context.plugins.some(function(plugin) {
-			if(plugin.app.expression.test(input)) {
+			if(plugin.app.expression.test(carst.input)) {
 
 				plugin.app.fn({
 					context: context,
-					match: input.match(plugin.app.expression),
-					input: input
+					match: carst.input.match(plugin.app.expression),
+					input: carst.input,
+					inputDuration: carst.inputDuration,
+					channel: carst.channel
 				}, callback);
 				processed = true;
 				return true;
@@ -433,6 +443,7 @@ module.exports = function (context) {
 		carsts[carst.channel].unshift(carst);
 		setEndTime(carst.channel);
 		sendToReceivers(carst.channel, 'carst', carsts[carst.channel][0]);
+		context.io.sockets.emit('tossing');
 		updateSockets();
 	}
 
@@ -449,6 +460,7 @@ module.exports = function (context) {
 				clearTimeout(defaultCarstStatus[channel].timeout);
 				sendToReceivers(channel, 'carst', carsts[channel][0]);
 			}
+			context.io.sockets.emit('tossing');
 			updateSockets();
 		}
 	}
@@ -483,7 +495,7 @@ module.exports = function (context) {
 
 		resultTime = resultTime || 1800000;
 
-		timeString = formatTime(getPartsOfMilliseconds(resultTime));
+		timeString = newFormatTime(resultTime/1000, true); //formatTime(getPartsOfMilliseconds(resultTime));
 
 		return {
 			resultTime: resultTime,
@@ -493,14 +505,18 @@ module.exports = function (context) {
 
 	// create carst object
 	function processCarst(input, inputDuration, channel, callback) {
-		processPlugins(input, function(data) {
+		processPlugins({
+			input: input,
+			inputDuration: inputDuration,
+			channel: channel
+		}, function(data) {
 			var time;
 			var carst;
 			if(data.status) {
 				time = getTime(data.info.duration);
 				carst = {
 					title: data.info.icon + ' ' + data.info.title,
-					url: input,
+					url: data.info.url,
 					channel: channel,
 					time: time.resultTime,
 					timeString: time.timeString
@@ -540,6 +556,26 @@ module.exports = function (context) {
 		}
 	}
 
+	var scommands = {
+		'clear' : function(data) {
+			var channel = data.channel;
+			if(carsts[channel].length > 0) {
+				carsts[channel] = [];
+				sendDefault(channel);
+				updateSockets();
+			}
+		},
+		'reset' : function(data) {
+			var channel = data.channel;
+			if(carsts[channel].length > 0) {
+				clearTimeout(currentTimeout);
+				setEndTime(channel);
+				sendToReceivers(channel, 'carst', carsts[channel][0]);
+				updateSockets();
+			}
+		}
+	};
+
 	// command: convert user input to common format and send it to receivers
 	function handleCommand(data) {
 		cID++;
@@ -549,6 +585,14 @@ module.exports = function (context) {
 			command: data.input,
 			channel: channel
 		};
+
+		for(var key in scommands) {
+			if(key == command.command) {
+				scommands[key](command);
+				return;
+			}
+		}
+
 		commands[channel].push(command);
 		if(commands[channel][commands[channel].length - 1] === command) {
 			sendToReceivers(channel, 'command', commands[channel][commands[channel].length - 1]);
@@ -610,9 +654,11 @@ module.exports = function (context) {
 					if(!err && res.statusCode == 302) {
 						send_meme(res.headers['location']);
 					} else if(!err && body && res.statusCode == 200) {
-						var $ = require('cheerio').load(body);
+						var $ = context.cheerio.load(body);
 						var title = $(".badge-item-title")[0].children[0].data;
-						var src = $(".badge-item-img")[0] ? $(".badge-item-img")[0].attribs.src : $(".badge-item-animated-img")[0].attribs.src;
+						var img = $(".badge-item-img");
+						var aimg = $(".badge-item-animated-img");
+						var src = img[0] && img[0].attribs ? img[0].attribs.src : (aimg[0] && aimg[0].attribs ? aimg[0].attribs.src : '' );
 						socket.emit('sendRandomGag', {
 							title: title,
 							src: src
@@ -700,33 +746,6 @@ module.exports = function (context) {
 					clearTimeout(currentTimeout);
 					sendToReceivers(channel, 'carst', carsts[channel][0]);
 				}
-				updateSockets();
-			}
-		});
-
-		/**************************************************************/
-		/********************* DELETE WHOLE QUEUE *********************/
-		/**************************************************************/
-
-		socket.on('clearQueue', function(data) {
-			var channel = data.channel;
-			if(carsts[channel].length > 0) {
-				carsts[channel] = [];
-				sendDefault(channel);
-				updateSockets();
-			}
-		});
-
-		/**************************************************************/
-		/*********************** RESET FIRST CARST ********************/
-		/**************************************************************/
-
-		socket.on('setBack', function(data) {
-			var channel = data.channel;
-			if(carsts[channel].length > 0) {
-				clearTimeout(currentTimeout);
-				setEndTime(channel);
-				sendToReceivers(channel, 'carst', carsts[channel][0]);
 				updateSockets();
 			}
 		});
@@ -1117,6 +1136,14 @@ module.exports = function (context) {
 	context.app.post('/github', function(req, res) {
 		var body = req.body;
 		github = body;
+
+		handleCast({
+			input: 'app://github',
+			inputDuration: '30',
+			channel: '#global'
+		});
+
+
 		switch(body.action) {
 			case 'opened':
 				console.log('*** REPOSITORY ***');

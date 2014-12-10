@@ -15,17 +15,16 @@ this.fn = function(params, callback) {
                 var vimeo = JSON.parse(unescape(data));
 
                 if (vimeo) {
-                    console.log(vimeo.duration);
-                    var icon = '<span class="glyphicon glyphicon-facetime-video"></span> ';
                     var title = vimeo.name;
                     var duration = vimeo.duration + 's';
 
                     callback({
                         status: true,
                         info: {
-                            icon: icon,
+                            icon: '<img style="position:relative; top:-3px;" src="http://www.google.com/s2/favicons?domain=https://vimeo.com" />',
                             title: title,
-                            duration: duration
+                            duration: duration,
+                            url: 'https://player.vimeo.com/video/' + params.match[5] + '?autoplay=1&badge=0&byline=0&portrait=0'
                         }
                     });
                 } else {

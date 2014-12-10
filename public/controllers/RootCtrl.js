@@ -11,24 +11,38 @@ function whyYesIDoLikeJavaScript() {
 app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$window',
   function ($scope, $http, $rootScope, $location, $window, $interval) {
 
+      function newFormatTime(sec, withSec) {
+          var hours = Math.floor(sec/3600);
+          var minutes = Math.floor((sec - (hours * 3600))/60);
+          var seconds = sec - (minutes * 60 + hours * 3600);
+          return (hours > 0 ? hours+'h ' : '') + (minutes > 0 ? ('0' + Math.round(minutes)).slice(-2) + "' " : '') + (seconds > 0 && withSec ? ('0' + Math.round(seconds)).slice(-2)+'"' : '');
+      }
+
       var slider;
 
       $(document).ready(function() {
-
 
           function setSlider() {
               $('#ex8').attr('data-slider-max', slider.getValue() + 30);
               $('#ex8').attr('data-slider-value', slider.getValue());
               $('#ex8').attr('data-slider-min', (slider.getValue() - 30 < 1 ? 1 : slider.getValue() - 30) );
               slider.destroy();
-              slider = new Slider("#ex8");
+              slider = new Slider("#ex8", {
+                  formatter: function(value) {
+                    return(newFormatTime(value*60, true));
+                  },
+                  tooltip: 'always'
+              });
               $('#ex8').slider().on('slideStop', setSlider);
           }
 
-          $("#ex8").slider();
-
 // Without JQuery
-          slider = new Slider("#ex8");
+          slider = new Slider("#ex8", {
+              formatter: function(value) {
+                  return(newFormatTime(value*60, true));
+              },
+              tooltip: 'always'
+          });
           $('#ex8').slider().on('slideStop', setSlider);
 
 
@@ -275,19 +289,6 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
       }
     };
 
-      $scope.setBack = function() {
-          socket.emit('setBack', {
-              channel: $scope.channel
-          });
-      };
-
-      $scope.clearQueue = function() {
-            socket.emit('clearQueue', {
-                channel: $scope.channel
-            });
-      };
-
-
       $scope.maximize = function() {
           var channel = $scope.channel;
           socket.emit('sendInput', {
@@ -302,7 +303,6 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
       var input = $scope.input;
       var inputDuration = slider.getValue();
       var channel = $scope.channel;
-
 
       $scope.input = '';
       $scope.inputDuration = '';
@@ -327,30 +327,72 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
           index: index,
           channel: $scope.channel
         });
+          $('#carsten-con').addClass('tossing');
+          setTimeout(function() {
+              $('#carsten-con').removeClass('tossing');
+          }, 1000);
       }
     };
 
     $scope.removePlaylist = function(index) {
-      if(Number.isInteger(index)) {
-        socket.emit('removePlaylist', $scope.playlists[index]._id);
-      }
+        swal({
+            title: "Are you sure?",
+            text: "You will not be able to recover this playlist!",
+            type: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#DD6B55",
+            confirmButtonText: "Yes, delete it!",
+            closeOnConfirm: false
+        }, function(){
+            if(Number.isInteger(index)) {
+                socket.emit('removePlaylist', $scope.playlists[index]._id);
+                swal("Deleted!", "Your playlist has been deleted.", "success");
+            }
+        });
     };
 
     $scope.removeEvent = function(index) {
-      if(Number.isInteger(index)) {
-        socket.emit('removeEvent', {
-          channel: $scope.channel,
-          index: $scope.events[$scope.channel][index]._id
+
+        swal({
+            title: "Are you sure?",
+            text: "You will not be able to recover this event!",
+            type: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#DD6B55",
+            confirmButtonText: "Yes, delete it!",
+            closeOnConfirm: false
+        }, function(){
+
+            if(Number.isInteger(index)) {
+                socket.emit('removeEvent', {
+                    channel: $scope.channel,
+                    index: $scope.events[$scope.channel][index]._id
+                });
+                swal("Deleted!", "Your event has been deleted.", "success");
+            }
         });
-      }
     };
 
     $scope.deleteCarst = function(carst, channel) {
-      var data = {
-        carst : carst,
-        channel : channel
-      };
-      socket.emit('removeCarst', data);
+
+        swal({
+            title: "Are you sure?",
+            text: "You will not be able to recover this carst!",
+            type: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#DD6B55",
+            confirmButtonText: "Yes, delete it!",
+            closeOnConfirm: false
+        }, function(){
+
+            var data = {
+                carst : carst,
+                channel : channel
+            };
+            socket.emit('removeCarst', data);
+                swal("Deleted!", "Your carst has been deleted.", "success");
+        });
+
     };
 
 
@@ -401,6 +443,13 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
           $scope.$apply(function() {
               $scope.capture = data;
           });
+      });
+
+      socket.on('tossing', function() {
+          $('#carsten-con').addClass('tossing');
+          setTimeout(function() {
+              $('#carsten-con').removeClass('tossing');
+          }, 1000);
       });
 
     socket.on('differentTime', function(data) {
@@ -454,7 +503,7 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
 
       function formatTime(arr) {
           var str = '';
-          arr.forEach(function(a, i) {
+          arr.forEach(function (a, i) {
               str += (i === 0 ? '' : ':') + ('0' + Math.round(a)).slice(-2);
           });
           return str;
@@ -476,7 +525,11 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
                           timer = undefined;
                       }
                       console.log(getPartsOfMilliseconds(Math.round(leftTime)));
-                      var newTimeString = formatTime(getPartsOfMilliseconds(leftTime));
+                      var newTimeString = newFormatTime(leftTime/1000, true); //formatTime(getPartsOfMilliseconds(leftTime));
+                      var width = Math.round(1143 * (leftTime/$scope.carsts[$scope.channel][0].time));
+                      $('#carsttime').css({
+                          'width' : width + 'px'
+                      });
                      // $('.active-carst').css({'', ''});
                       $scope.$apply(function() {
                           $scope.carsts[$scope.channel][0].timeString = newTimeString;
