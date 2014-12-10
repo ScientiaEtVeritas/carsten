@@ -7,7 +7,7 @@ module.exports = function (context) {
 	/**********************************************************************************/
 	/**********************************************************************************/
 
-	var github;
+	var github = {};
 
 	// moongoose Schema for defaultCarst
 	var defaultCarstSchema = context.mongoose.Schema({
@@ -669,8 +669,8 @@ module.exports = function (context) {
 			send_meme();
 		});
 
-		socket.on('getLatestGithub', function() {
-			socket.emit('sendLatestGithub', github);
+		socket.on('getLatestGithub', function(channel) {
+			socket.emit('sendLatestGithub', github[channel]);
 		});
 
 		/**************************************************************/
@@ -1133,14 +1133,31 @@ module.exports = function (context) {
 	/************************ GITHUB WEBHOOKS *********************/
 	/**************************************************************/
 
-	context.app.post('/github', function(req, res) {
-		var body = req.body;
-		github = body;
+	context.app.post('/github/:channel', function(req, res) {
 
-		handleCast({
-			input: 'app://github',
-			inputDuration: '30',
-			channel: '#global'
+		var event = req.header('X-Github-Event');
+		var body = req.body;
+		var channel = req.params.channel;
+
+		github[channel] = {
+			event: event,
+			body: body
+		};
+
+		console.log(event);
+		console.log('*************************************************');
+		console.log('*************************************************');
+		console.log('*************************************************');
+		console.log('*************************************************');
+		console.log('*************************************************');
+		console.log(body);
+		console.log(channel);
+		console.log('*************************************************');
+		console.log('*************************************************');
+		console.log('*************************************************');
+
+		processCarst('app://github', '5', '#' + channel, function(carst) {
+			unshiftCarst(carst);
 		});
 
 
@@ -1166,6 +1183,9 @@ module.exports = function (context) {
 				console.log('*** ISSUE CLOSED ***');
 				break;
 		}
+
+		res.end('');
+
 	});
 
 	/**************************************************************/
