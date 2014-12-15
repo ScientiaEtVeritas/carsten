@@ -7,8 +7,6 @@ module.exports = function (context) {
 	/**********************************************************************************/
 	/**********************************************************************************/
 
-	var github = {};
-
 	// moongoose Schema for defaultCarst
 	var defaultCarstSchema = context.mongoose.Schema({
 		channel: String,
@@ -99,7 +97,7 @@ module.exports = function (context) {
 	defaultCarst[context.config.defaultChannel] = {
 		id : -2,
 		channel: context.config.defaultChannel,
-		url : 'app://index',
+		url : ':index',
 		playlist: undefined
 	};
 
@@ -107,12 +105,39 @@ module.exports = function (context) {
 
 	// regular expression to identify input
 	var regExp = {};
-	regExp.carst = new RegExp("^((http|https|app)://)|(www.)", "i");
-	regExp.playlist = new RegExp("^playlist:\/\/(.*)$", "i");
+	regExp.carst = new RegExp("^((http|https)://)|(www.)", "i");
+	regExp.app = new RegExp("^:", "i");
+	regExp.playlist = new RegExp("^#(.*)$", "i");
+	regExp.command = new RegExp("^/(.*)$", "i");
 
 	var receiversockets; // Socket connection to all receivers
 
 	var capture = {}; // latest screenshots for all channels
+
+	var github = {};
+
+	var carstHistory = [];
+
+	// serversided commands
+	var scommands = {
+		'clear' : function(data) {
+			var channel = data.channel;
+			if(carsts[channel].length > 0) {
+				carsts[channel] = [];
+				sendDefault(channel);
+				updateSockets();
+			}
+		},
+		'reset' : function(data) {
+			var channel = data.channel;
+			if(carsts[channel].length > 0) {
+				clearTimeout(currentTimeout);
+				setEndTime(channel);
+				sendToReceivers(channel, 'carst', carsts[channel][0]);
+				updateSockets();
+			}
+		}
+	};
 
 	/**********************************************************************************/
 	/*************************** INITIAL DATABASE QUERIES *****************************/
@@ -255,6 +280,14 @@ module.exports = function (context) {
 			}
 		}
 		return -1;
+	}
+
+	// format milliseconds to  hrs, min and sec in an array
+	function getPartsOfMilliseconds(time) {
+		var hrs = Math.floor(time/3600000);
+		var min = Math.floor((time - hrs*3600000)/60000);
+		var sec = (time - (min*60000))/1000;
+		return [hrs, min, sec];
 	}
 
 	// returns true or false depending if parameter is integer or not
@@ -410,6 +443,7 @@ module.exports = function (context) {
 		sendToSocket(socket, 'sendCommands', commands);
 		sendToSocket(socket, 'sendPlaylists', playlists);
 		sendToSocket(socket, 'sendEvents', events);
+		sendToSocket(socket, 'sendCarstHistory', carstHistory);
 	}
 
 	// loop thorugh all sockets and update them
@@ -437,6 +471,7 @@ module.exports = function (context) {
 	}
 
 	function unshiftCarst(carst) {
+		addToCarstHistory(carst.url);
 		gID++;
 		carst.id = gID;
 		clearTimeout(currentTimeout);
@@ -465,13 +500,6 @@ module.exports = function (context) {
 		}
 	}
 
-	function getPartsOfMilliseconds(time) {
-		var hrs = Math.floor(time/3600000);
-		var min = Math.floor((time - hrs*3600000)/60000);
-		var sec = (time - (min*60000))/1000;
-		return [hrs, min, sec];
-	}
-
 	// calculate time of sockets input
 	function getTime(inputDuration) {
 		var omos = /^(\d+)$/;
@@ -495,7 +523,7 @@ module.exports = function (context) {
 
 		resultTime = resultTime || 1800000;
 
-		timeString = newFormatTime(resultTime/1000, true); //formatTime(getPartsOfMilliseconds(resultTime));
+		timeString = newFormatTime(resultTime/1000, true);
 
 		return {
 			resultTime: resultTime,
@@ -535,8 +563,21 @@ module.exports = function (context) {
 		});
 	}
 
+	function addToCarstHistory(input) {
+		var index = indexOfObject(carstHistory, 'url', input);
+		if(index == -1) {
+			carstHistory.push({
+				url: input,
+				count: 1
+			});
+		} else {
+			carstHistory[index].count++;
+		}
+	}
+
 	// carst: convert user input to common format
 	function handleCast(data) {
+		addToCarstHistory(data.input);
 		processCarst(data.input, data.inputDuration, data.channel, addCarstToQueue);
 	}
 
@@ -556,33 +597,13 @@ module.exports = function (context) {
 		}
 	}
 
-	var scommands = {
-		'clear' : function(data) {
-			var channel = data.channel;
-			if(carsts[channel].length > 0) {
-				carsts[channel] = [];
-				sendDefault(channel);
-				updateSockets();
-			}
-		},
-		'reset' : function(data) {
-			var channel = data.channel;
-			if(carsts[channel].length > 0) {
-				clearTimeout(currentTimeout);
-				setEndTime(channel);
-				sendToReceivers(channel, 'carst', carsts[channel][0]);
-				updateSockets();
-			}
-		}
-	};
-
 	// command: convert user input to common format and send it to receivers
 	function handleCommand(data) {
 		cID++;
 		var channel = data.channel;
 		var command = {
 			id: cID,
-			command: data.input,
+			command: data.input.substr(1),
 			channel: channel
 		};
 
@@ -678,13 +699,13 @@ module.exports = function (context) {
 		/**************************************************************/
 
 		socket.on('sendInput', function(data) {
-			if(regExp.carst.test(data.input)) {
+			if(regExp.carst.test(data.input) || regExp.app.test(data.input)) {
 				handleCast(data);
 			} else if(regExp.playlist.test(data.input)) {
 				handlePlaylist(data, function(playlist) {
 					playlist && addPlaylistToQueue(playlist, data.channel);
 				});
-			} else {
+			} else if(regExp.command.test(data.input)) {
 				handleCommand(data);
 			}
 		});
@@ -694,7 +715,7 @@ module.exports = function (context) {
 		/**************************************************************/
 
 		socket.on('carstNow', function(data) {
-			if(regExp.carst.test(data.input)) {
+			if(regExp.carst.test(data.input) || regExp.app.test(data.input)) {
 					processCarst(data.input, data.inputDuration,data.channel, function(carst) {
 						unshiftCarst(carst);
 					});
@@ -862,6 +883,8 @@ module.exports = function (context) {
 				url : data.defaultCarst,
 				playlist: undefined
 			};
+
+			console.log(defaultCarst[channel]);
 			if(carsts[channel].length === 0) {
 				handlePlaylist({
 					input: data.defaultCarst
@@ -1019,7 +1042,7 @@ module.exports = function (context) {
 					defaultCarst[channel] = {
 						id : -2,
 						channel: channel,
-						url : 'app://index',
+						url : ':index',
 						playlist: undefined
 					};
 				}
@@ -1156,7 +1179,7 @@ module.exports = function (context) {
 		console.log('*************************************************');
 		console.log('*************************************************');
 
-		processCarst('app://github', '5', '#' + channel, function(carst) {
+		processCarst(':github', '5', '#' + channel, function(carst) {
 			unshiftCarst(carst);
 		});
 
