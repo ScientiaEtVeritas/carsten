@@ -25,6 +25,56 @@ body {
 	background-color:#fff !important;
 }
 
+.term::selection, .description::selection, .container::selection{ background-color: transparent;}
+.term::moz-selection, .description::moz-selection, .container::moz-selection{ background-color: transparent;}
+.term::webkit-selection, .description::webkit-selection, .container::webkit-selection{ background-color: transparent;}
+
+#autocomplete {
+	cursor:pointer;
+	font-size:1.2em;
+	width:670px;
+	position: absolute;
+	box-sizing: border-box;
+	border:1px solid #ccc;
+	right:170px;
+	bottom:125px;
+	background-color:rgba(255,255,255,0.95);
+	visibility: hidden;
+}
+
+#autocomplete .entry {
+	height:50px;
+	width:100%;
+	position:relative;
+}
+
+.entry:not(:last-child) {
+	border-bottom:2px solid rgba(88,88,88, 0.2);
+}
+
+#autocomplete .entry:hover,
+.entry_active {
+	background-color:rgba(87,124,111, 0.2);
+}
+
+
+#autocomplete .term {
+	position:absolute;
+	left:10px;
+	top:50%;
+	transform: translate(0, -50%);
+}
+
+#autocomplete .description {
+	font-size:0.9em;
+	color:#888;
+	font-style: italic;
+	position:absolute;
+	right:10px;
+	top:50%;
+	transform: translate(0, -50%);
+}
+
 .jumbotron {
 	width:100%;
 	height:100%;
@@ -39,10 +89,9 @@ body {
 
 #header {
 	text-align: center;
-	background-color:#fff;
 	height:580px;
 	background-color:#577C6F;
-	background-image:url(../img/bg1.jpg);
+	/*background-image:url(../img/bg1.jpg);*/
 	background-repeat:no-repeat;
 	background-position: 50% 50%;
 	background-size: cover;
@@ -269,7 +318,7 @@ input[type=text], button, .dropdown-menu {
 	padding-right:0px;
 	margin:0px;
 	min-width:0px !important;
-	background-color:rgba(87,124,111, 0.5) !important;
+	background-color:rgba(87,124,111, 0.1) !important;
 	color:#fff !important;
 }
 

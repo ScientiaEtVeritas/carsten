@@ -11,6 +11,167 @@ function whyYesIDoLikeJavaScript() {
 app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$window',
   function ($scope, $http, $rootScope, $location, $window, $interval) {
 
+      var slider; // the global slider instance
+      var evSlider; // event slider instance
+
+      var timer; // carst countdown instance
+
+      $scope.show = 1; //
+
+      $scope.capture = {}; // screenshot in base64 format
+
+      $scope.input = ''; // initial value for user input
+      $scope.inputDuration = ''; // initial value for user input
+      $scope.defaultCarst = []; // default carsts for all channels
+      $scope.carsts = []; // carsts for all channels
+      $scope.commands = []; // commands for all channels
+      $scope.countReceivers = []; // how many receivers are in the channels?
+      $scope.playlists = []; // playlists
+      $scope.events = []; // events for all channels
+
+      $scope.playlistError = false; // new playlist input error?
+      $scope.addEventStatus = false; // new event error?
+
+      // initial value for new event
+      $scope.newEvent = {
+          url: 'sample carst',
+          clock: '12:00',
+          duration: '05:00'
+      };
+
+      // first proposals for auto completion
+      var proposals = [
+          {
+              term: 'http://',
+              description: 'simple carst'
+          },
+          {
+              term: ':',
+              description: 'carst apps'
+          },
+          {
+              term: '/',
+              description: 'commands'
+          },
+          {
+              term: '#',
+              description: 'carst playlists'
+          }
+      ];
+
+      // more detail proposals for auto completion
+      var extendProposals = [
+          [{
+              term: 'http://google.de',
+              description: 'Google'
+          },
+              {
+                  term: 'http://sap.de',
+                  description: 'SAP'
+              }],
+          [{
+              term: ':index',
+              description: 'standby screen'
+          },
+              {
+              term: ':9gag',
+              description: 'random 9gag picture'
+          },
+              {
+                  term: ':github',
+                  description: 'latest github event'
+              }],
+          [{
+              term: '/reload',
+              description: 'refresh the site'
+          },
+              {
+                  term: '/clear',
+                  description: 'remove all carsts in queue'
+              },
+              {
+                  term: '/reset',
+                  description: 'reload the carst with time'
+              },
+              {
+                  term: '/maximize',
+                  description: 'fullscreen'
+              },
+              {
+                  term: '/unmaximize',
+                  description: 'none fullscreen'
+              },
+              {
+                  term: '/toggleMaximize',
+                  description: 'toggle fullscreen'
+              },
+
+              {
+                  term: '/devtools',
+                  description: 'open development tools on receiver'
+              },
+              {
+                  term: '/power on',
+                  description: 'switch on the tv'
+              },
+              {
+                  term: '/power off',
+                  description: 'switch off the tv'
+              }]
+      ];
+
+      extendProposals[3] = [];
+
+      $scope.proposals = proposals;
+
+      $scope.activeNone = function() {
+          $('.entry_active').removeClass('entry_active');
+          $scope.selected = undefined;
+      };
+
+      /**********************************************************************************/
+      /******************************* HELPER FUNCTIONS *********************************/
+      /************************************************ *********************************/
+      /**********************************************************************************/
+      /**********************************************************************************/
+      /**********************************************************************************/
+
+      // Levenshtein algorithm for autocompletion suggestions
+      function levenshteinDistance(a, b) {
+          if(a.length === 0) return b.length;
+          if(b.length === 0) return a.length;
+
+          var matrix = [];
+
+          // increment along the first column of each row
+          var i;
+          for(i = 0; i <= b.length; i++){
+              matrix[i] = [i];
+          }
+
+          // increment each column in the first row
+          var j;
+          for(j = 0; j <= a.length; j++){
+              matrix[0][j] = j;
+          }
+
+          // Fill in the rest of the matrix
+          for(i = 1; i <= b.length; i++){
+              for(j = 1; j <= a.length; j++){
+                  if(b.charAt(i-1) == a.charAt(j-1)){
+                      matrix[i][j] = matrix[i-1][j-1];
+                  } else {
+                      matrix[i][j] = Math.min(matrix[i-1][j-1] + 1, // substitution
+                          Math.min(matrix[i][j-1] + 1, // insertion
+                              matrix[i-1][j] + 1)); // deletion
+                  }
+              }
+          }
+
+          return matrix[b.length][a.length];
+      }
+
+      // format seconds to 5h 03' 09", last is optional
       function newFormatTime(sec, withSec) {
           var hours = Math.floor(sec/3600);
           var minutes = Math.floor((sec - (hours * 3600))/60);
@@ -18,25 +179,244 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
           return (hours > 0 ? hours+'h ' : '') + (minutes > 0 ? ('0' + Math.round(minutes)).slice(-2) + "' " : '') + (seconds > 0 && withSec ? ('0' + Math.round(seconds)).slice(-2)+'"' : '');
       }
 
-      var slider;
+      // returns index in object by value of a key
+      function indexOfObject(array, key, value) {
+          for (var i = 0; i < array.length; i++) {
+              if (array[i][key].toLowerCase() === value.toLowerCase()) {
+                  return i;
+              }
+          }
+          return -1;
+      }
 
-      $(document).ready(function() {
+      /**********************************************************************************/
+      /*********************************** FUNCTIONS ************************************/
+      /************************************************ *********************************/
+      /**********************************************************************************/
+      /**********************************************************************************/
+      /**********************************************************************************/
 
-          function setSlider() {
+      // build a new slider with new settings
+      function setSlider() {
+
+          if((slider.getValue() == slider.getAttribute('max') || slider.getValue() == slider.getAttribute('min')) && !(slider.getValue() <= 1)) {
+
               $('#ex8').attr('data-slider-max', slider.getValue() + 30);
               $('#ex8').attr('data-slider-value', slider.getValue());
-              $('#ex8').attr('data-slider-min', (slider.getValue() - 30 < 1 ? 1 : slider.getValue() - 30) );
+              $('#ex8').attr('data-slider-min', (slider.getValue() - 30 < 1 ? 1 : slider.getValue() - 30));
               slider.destroy();
               slider = new Slider("#ex8", {
-                  formatter: function(value) {
-                    return(newFormatTime(value*60, true));
+                  formatter: function (value) {
+                      return (newFormatTime(value * 60, true));
                   },
                   tooltip: 'always'
               });
               $('#ex8').slider().on('slideStop', setSlider);
           }
+      }
 
-// Without JQuery
+      /**************************************************************/
+      /******************** FOR AUTOCOMPLETION **********************/
+      /**************************************************************/
+
+      // select the last in suggestion list
+      function moveUp() {
+          $scope.selected = $scope.proposals.length < 7 ? $scope.proposals.length-1 : 6;
+          selectEntry();
+      }
+
+      // select the first in suggestion list
+      function moveDown() {
+          $scope.selected = 0;
+          selectEntry();
+      }
+
+      // unselect all
+      function unselectEntry() {
+          $('.entry_active').removeClass('entry_active');
+          $scope.selected = undefined;
+      }
+
+      // select a specifig entry
+      function selectEntry() {
+          $('.entry_active').removeClass('entry_active');
+          $('#entry_' + $scope.selected).addClass('entry_active');
+      }
+
+      // build suggestion list
+      function execProp() {
+          var index;
+          var string = $scope.input;
+          var push = false;
+          switch(true) {
+              case /^((http|https):\/\/)|(www.)/.test(string):
+                  setProposals(0);
+                  index = 0;
+                  break;
+              case /^:/.test(string):
+                  setProposals(1);
+                  index = 1;
+                  break;
+              case /^\//.test(string):
+                  setProposals(2);
+                  index = 2;
+                  break;
+              case /^#/.test(string):
+                  setProposals(3);
+                  index = 3;
+                  break;
+              default:
+                  $scope.proposals = proposals;
+                  break;
+          }
+          $scope.selected = undefined;
+          $scope.proposals = $scope.proposals.filter(function(element) {
+
+              console.log(element.term);
+
+              var t = element.term.toLowerCase();
+              var s = $scope.input.toLowerCase();
+
+              if(t == s) {
+                  push = true;
+              }
+
+              if(t !== s && (s.indexOf(t) != -1 || t.indexOf(s) != -1 ||  levenshteinDistance(s, t) < 5
+                  || s.substring(1).indexOf(t.substring(1)) != -1 || t.substring(1).indexOf(s.substring(1)) != -1 ||  levenshteinDistance(s.substring(1), t.substring(1)) < 5)) {
+                  return true;
+              } else {
+                  return false;
+              }
+
+          });
+
+          if(push) {
+              if((index == 0 || index == 3 || index == 1) && $scope.input.slice(-3) != " -d" && $scope.input.slice(-3) != " -f") {
+                  $scope.proposals.push({
+                      term: $scope.input + ' -d',
+                      description: 'set as default',
+                      count:0
+                  });
+              }
+              if((index == 0 || index == 3 || index == 1) && $scope.input.slice(-3) != " -f" && $scope.input.slice(-3) != " -d") {
+                  $scope.proposals.push({
+                      term: $scope.input + ' -f',
+                      description: 'instant carst',
+                      count:0
+                  });
+              }
+          }
+
+      }
+
+      // set the scope
+      function setProposals(index) {
+          console.log(extendProposals[index]);
+          $scope.proposals = JSON.parse(JSON.stringify(extendProposals[index]));
+      }
+
+    // prevent some defaults for keys
+      $scope.preventJump = function($event) {
+          if($event.keyCode == 38 || $event.keyCode == 40 || $event.keyCode == 9) {
+              $event.preventDefault();
+          }
+      };
+
+      // handle key inputs
+      $scope.keyAuto = function($event) {
+          switch($event.keyCode) {
+              case 13: // enter key
+                  if($scope.selected != undefined) {
+                      $event.preventDefault();
+                      $scope.enter($('#entry_' + $scope.selected + ' .term').html());
+                      $('.entry_active').removeClass('entry_active');
+                      $scope.selected = undefined;
+                      execProp();
+                  } else {
+                      $scope.carst();
+                      execProp();
+                  }
+                  break;
+              /*case 8: //backspace key
+                  execProp();
+                  break;*/
+                  case 37: // left key
+                      if($scope.selected != undefined) {
+                          $scope.input = '';
+                          unselectEntry();
+                          execProp();
+                      }
+                  break;
+              case 39: // right key
+              case 9: // tab key
+                  if($scope.selected != undefined) {
+                      $event.preventDefault();
+                      $scope.enter($('#entry_' + $scope.selected + ' .term').html());
+                      unselectEntry();
+                      execProp();
+                  }
+                  break;
+              case 38: // up key
+                  if($scope.selected != undefined) {
+                      if($scope.selected > 0) {
+                          $scope.selected--;
+                          selectEntry();
+                      } else {
+                          moveUp();
+                      }
+                  } else {
+                        moveUp();
+                  }
+                  break;
+              case 40: // down key
+                  if($scope.selected != undefined) {
+                      if($scope.selected < $scope.proposals.length-1 && $scope.selected < 6) {
+                          $scope.selected++;
+                          selectEntry();
+                      } else {
+                          moveDown();
+                      }
+                  } else {
+                      moveDown();
+                  }
+                  break;
+              default:
+                  $scope.activeNone();
+                  execProp();
+          }
+      };
+
+      // set input to a specific value
+      $scope.enter = function(a) {
+          $scope.input = a;
+          //$('.entry').blur();
+          //$('#carst_input').focus();
+      };
+
+      // show auto completion
+      $scope.showAuto = function() {
+          execProp();
+          $('#autocomplete').removeClass('pullAway').removeClass('pullUp');
+          $('#autocomplete').css({'visibility' : 'hidden'});
+
+          setTimeout(function() {
+              $('#autocomplete').addClass('pullUp');
+          }, 0);
+      };
+
+      // hide auto completion
+      $scope.hideAuto = function() {
+          if($('#autocomplete').css('visibility') != 'hidden') {
+              $('#autocomplete').removeClass('pullAway').removeClass('pullUp');
+
+              setTimeout(function() {
+                  $('#autocomplete').addClass('pullAway');
+              }, 0);
+          }
+      };
+
+      $(document).ready(function() {
+
           slider = new Slider("#ex8", {
               formatter: function(value) {
                   return(newFormatTime(value*60, true));
@@ -54,16 +434,6 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
               }
           });
 
-      });
-      $scope.show = 1;
-
-
-      var timer;
-
-      $scope.capture = {};
-
-      $('.help').tooltip({
-          tooltipClass: "toolTipDetails"
       });
 
       var a, b, c = ["Knock, knock.\nWho’s there?\nvery long pause…\nJava.\n:-o", "{} + [] === 0", "Do you like JavaScript? --> whyYesIDoLikeJavaScript()", "q. How do you comfort a JavaScript bug? a. You console it.", "You’ll never see this printed to the console :)"];
@@ -118,8 +488,6 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
           $(this).html('<span class="glyphicon glyphicon-chevron-down"></span> Show more...');
       });
 
-      $('#carst_input').focus();
-
       $('#l-carsts').sortable({
           axis:"y",
           scroll:true,
@@ -144,25 +512,6 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
       timeString: 'hh:mm:ss'
     }];
     
-    $scope.input = '';
-    $scope.inputDuration = '';
-    $scope.defaultCarst = [];
-    $scope.carsts = [];
-    $scope.commands = [];
-    $scope.countReceivers = [];
-    $scope.playlists = [];
-    $scope.events = [];
-
-    $scope.playlistError = false;
-    $scope.addEventStatus = false;
-
-    $scope.newEvent = {
-      url: 'sample carst',
-      clock: '12:00',
-      duration: '05:00'
-    };
-    var evSlider;
-
       function setEvSlider() {
           $('#evslider').attr('data-slider-max', evSlider.getValue() + 30);
           $('#evslider').attr('data-slider-value', evSlider.getValue());
@@ -283,12 +632,6 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
       socket.emit('newDefaultCarst', data);
     };
 
-    $scope.inputKeyup = function($event) {
-      if($event.keyCode === 13) {
-        $scope.carst();
-      }
-    };
-
       $scope.maximize = function() {
           var channel = $scope.channel;
           socket.emit('sendInput', {
@@ -298,7 +641,7 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
           });
       };
 
-    $scope.carst = function (now) {
+    $scope.carst = function(now) {
 
       var input = $scope.input;
       var inputDuration = slider.getValue();
@@ -315,6 +658,10 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
         if(now || input.slice(-3) === " -f") {
             carst.input = (input.slice(-3) === " -f") ? (input.substr(0, input.length -3)) : input;
             socket.emit('carstNow', carst);
+        } else if(input.slice(-3) === " -d") {
+            carst.input = input;
+            carst.input = input.substr(0, input.length -3);
+            $scope.setDefault(carst.input, carst.channel);
         } else if(input.length > 0) {
             carst.input = input;
           socket.emit('sendInput', carst);
@@ -439,6 +786,20 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
           reader.readAsBinaryString(file);
       });
 
+      socket.on('sendCarstHistory', function(data) {
+         $scope.$apply(function() {
+             $scope.carstHistory = data;
+             extendProposals[0].length = 0;
+             $scope.carstHistory.forEach(function(carst) {
+                 extendProposals[0].push({
+                     term: carst.url,
+                     description: 'carsted ' + carst.count + ' time(s)',
+                     count: carst.count
+                 });
+             });
+         });
+      });
+
       socket.on('capture', function(data) {
           $scope.$apply(function() {
               $scope.capture = data;
@@ -494,21 +855,6 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
       });
     });
 
-      function getPartsOfMilliseconds(time) {
-          var hrs = Math.floor(time/3600000);
-          var min = Math.floor((time - hrs*3600000)/60000);
-          var sec = (time - (min*60000))/1000;
-          return [hrs, min, sec];
-      }
-
-      function formatTime(arr) {
-          var str = '';
-          arr.forEach(function (a, i) {
-              str += (i === 0 ? '' : ':') + ('0' + Math.round(a)).slice(-2);
-          });
-          return str;
-      }
-
     socket.on('sendCarsts', function(data) {
       $scope.$apply(function() {
         $scope.carsts = data;
@@ -524,8 +870,7 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
                           clearInterval(timer);
                           timer = undefined;
                       }
-                      console.log(getPartsOfMilliseconds(Math.round(leftTime)));
-                      var newTimeString = newFormatTime(leftTime/1000, true); //formatTime(getPartsOfMilliseconds(leftTime));
+                      var newTimeString = newFormatTime(leftTime/1000, true);
                       var width = Math.round(1143 * (leftTime/$scope.carsts[$scope.channel][0].time));
                       $('#carsttime').css({
                           'width' : width + 'px'
@@ -547,6 +892,13 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
     socket.on('sendPlaylists', function(data) {
       $scope.$apply(function() {
         $scope.playlists = data;
+          extendProposals[3].length = 0;
+          $scope.playlists.forEach(function(playlist) {
+              extendProposals[3].push({
+                  term: '#' + playlist.title,
+                  description: ''
+              });
+          });
       });
     });
 
@@ -573,14 +925,4 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
       });
 
     });
-
-   function indexOfObject(array, key, value) {
-      for (var i = 0; i < array.length; i++) {
-        if (array[i][key].toLowerCase() === value.toLowerCase()) {
-          return i;
-        }
-      }
-      return -1;
-    }
-
   }]);

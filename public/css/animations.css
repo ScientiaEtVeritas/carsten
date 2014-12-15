@@ -32,3 +32,109 @@
 		-webkit-transform: rotate(-3deg);
 	}
 }
+
+.pullUp{
+	animation-name: pullUp;
+	-webkit-animation-name: pullUp;
+
+	animation-duration: 0.8s;
+	-webkit-animation-duration: 0.8s;
+
+	animation-timing-function: ease-out;
+	-webkit-animation-timing-function: ease-out;
+
+	transform-origin: 50% 100%;
+	-ms-transform-origin: 50% 100%;
+	-webkit-transform-origin: 50% 100%;
+	visibility: visible !important;
+}
+
+@keyframes pullUp {
+	0% {
+		transform: scaleY(0.1);
+		opacity: 0;
+	}
+	40% {
+		transform: scaleY(1.02);
+	}
+	60% {
+		transform: scaleY(0.98);
+	}
+	80% {
+		transform: scaleY(1.01);
+		opacity: 1;
+	}
+	100% {
+		transform: scaleY(0.98);
+	}
+	80% {
+		transform: scaleY(1.01);
+	}
+	100% {
+		transform: scaleY(1);
+	}
+}
+
+@-webkit-keyframes pullUp {
+	0% {
+		-webkit-transform: scaleY(0.1);
+		opacity: 0;
+	}
+	40% {
+		-webkit-transform: scaleY(1.02);
+	}
+	60% {
+		-webkit-transform: scaleY(0.98);
+	}
+	80% {
+		-webkit-transform: scaleY(1.01);
+		opacity: 1;
+	}
+	100% {
+		-webkit-transform: scaleY(0.98);
+	}
+	80% {
+		-webkit-transform: scaleY(1.01);
+	}
+	100% {
+		-webkit-transform: scaleY(1);
+	}
+}
+
+.pullAway{
+	animation-name: pullAway;
+	-webkit-animation-name: pullAway;
+
+	animation-duration: 0.3s;
+	-webkit-animation-duration: 0.3s;
+
+	animation-timing-function: ease-out;
+	-webkit-animation-timing-function: ease-out;
+
+	transform-origin: 50% 100%;
+	-ms-transform-origin: 50% 100%;
+	-webkit-transform-origin: 50% 100%;
+	visibility: visible !important;
+	animation-fill-mode: forwards;
+	-webkit-animation-fill-mode: forwards;
+}
+
+@keyframes pullAway {
+	0% {
+		opacity:1;
+	}
+	100% {
+		opacity: 0;
+		visibility: hidden;
+	}
+}
+
+@-webkit-keyframes pullAway {
+	0% {
+		opacity:1;
+	}
+	100% {
+		opacity: 0;
+		visibility: hidden;
+	}
+}

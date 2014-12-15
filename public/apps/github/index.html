@@ -75,6 +75,25 @@
 				</div>
 			</div>
 		</div>
+		<div ng-switch-when="push">
+			<div ng-if="data" style="text-align:left; width:100vw; height:100vh;">
+				<div style="position:absolute; top:4vh; left:5vh;"><img style="height:10%;" src="github-logo.png" /><img style="height:10%;" src="github-sign.png" /></div>
+				<h1 style="position:absolute; top:15vh; left:18vh;"><small>Repository:</small> <span style="background-color:#46b8da; color:#fff;">{{ data.repository.full_name}}</span> <small>&mdash; {{data.repository.description}}</small></h1>
+				<div style="position:absolute; top:23vh; right:12vh;"  ng-switch="data.action">
+					<div ng-switch-default>
+						<h2><span style="background-color:#770000; color:#fff;">New Push </span> by <img style="height:5vh; position:relative; top:1vh;" ng-src="{{data.sender.avatar_url}}" /> <span style="color:#F19A7B;">{{data.sender.login}}</span></h2>
+					</div>
+				</div>
+			</div>
+			<div ng-if="data" style="position:absolute; bottom:0; height:50vh; width:80vw; margin-left:10vw; margin-right:10vw; background-color:#000; color:white;">
+				<div>
+					<h2>{{data.head_commit.message}}</h2>
+					<div style="padding:3vh; text-align:left; box-sizing:border-box; background-color:white; color:black; height:50vh; width:80vw;">
+						<h3><span style="font-size:1.3em;">{{data.head_commit.modified.length}} Modified File(s): </span><div style="margin-left:50px; display:block;" ng-repeat="modified in data.head_commit.modified">{{modified}}</div></h3>
+					</div>
+				</div>
+			</div>
+		</div>
 	</div>
 
 	</body>
