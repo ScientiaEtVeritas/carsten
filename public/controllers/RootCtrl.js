@@ -910,7 +910,6 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
 
     socket.on('log', function(data) {
       console.log(data);
-      console.table(data);
     });
 
     /*
