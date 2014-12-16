@@ -44,7 +44,7 @@
     <div id="nav">
         <div id="chromeextension" style="color:#fff; cursor:pointer; height:70px; width:300px; position:fixed; right:-75px; padding-top:10px; transform:rotate(45deg); top:30px; padding-left:10px; background-color:rgba(255,255,255,0.2);"
              ng-if="!installed" onclick="chrome.webstore.install(undefined, undefined, function(err) {console.log(err)})">
-            Check out our<br />
+            Feel free to install our<br />
             Chrome Extension
         </div>
     </div>
@@ -177,8 +177,6 @@
         <small>Clear</small>
         <span class="glyphicon glyphicon-trash"></span></div>
 </div> -->
-
-<div id="firstCarstUrlPres" style="display: none;">{{carsts[channel][0].url}}</div>
 
 <div ng-show="carsts[channel].length == 0 && show == 1" style="position: relative;">
     <div class="nono carst-item no-item">No casts available.</div>
