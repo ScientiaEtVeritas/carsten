@@ -58,7 +58,7 @@ context.db.once('open', function callback () {
 
 	console.log('\n*------ LOAD PLUGINS ------*');
 
-	context.plugins = [{name:'youtube'}, {name:'vimeo'}, {name:'url'}];
+	context.plugins = [{name:'youtube'}, {name:'vimeo'}, {name:'9gag'}, {name:'github'}, {name:'index'}, {name:'url'}];
 	context.pluginPath = './plugins';
 	context.consolePlugins = '';
 

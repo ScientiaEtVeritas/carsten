@@ -1,6 +1,5 @@
 node_modules
 public/components
-public/img
 uploads
 .DS_Store
 npm-debug.log
