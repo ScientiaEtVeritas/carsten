@@ -349,9 +349,13 @@ input[type=text], button, .dropdown-menu {
 	display:none;
 }
 
+#addconfig {
+	display:none;
+}
+
 
 @media screen and (-webkit-min-device-pixel-ratio:0) {
-	#chromeextension{
+	#chromeextension, #addconfig{
 		display:block;
 	}
 }

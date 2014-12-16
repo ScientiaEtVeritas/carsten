@@ -314,22 +314,22 @@ module.exports = function (context) {
 	}
 
 	// log registration
-	function logRegistration(host, channel) {
+	/*function logRegistration(host, channel) {
 		context.io.sockets.emit('log', 'Registration');
 		console.log('\n\n*------ REGISTRATION ' + logNum + ' === START ------*' +
 		'\nHostname: ', host +
 		'\nChannel: ' + channel + '\n');
 		logNum++;
-	}
+	}*/
 
 	// log deregistration
-	function logDeregistration(host, channel) {
+	/*function logDeregistration(host, channel) {
 		context.io.sockets.emit('log', 'Deregistration');
 		console.log('\n\n*------ DEREGISTRATION ' + logNum + ' === START ------*' +
 		'\nHostname: ', host +
 		'\nChannel: ' + channel + '\n');
 		logNum++;
-	}
+	}*/
 
 	/**********************************************************************************/
 	/*********************************** FUNCTIONS ************************************/
@@ -532,7 +532,7 @@ module.exports = function (context) {
 	}
 
 	// create carst object
-	function processCarst(input, inputDuration, channel, callback) {
+	function processCarst(input, inputDuration, channel, message, callback) {
 		processPlugins({
 			input: input,
 			inputDuration: inputDuration,
@@ -549,6 +549,18 @@ module.exports = function (context) {
 					time: time.resultTime,
 					timeString: time.timeString
 				};
+
+				if(message != 'no') {
+					context.io.sockets.emit('message', {
+						title: 'New ' + message + ' - ' + data.info.title.substring(0,25),
+						options: {
+							body: data.info.url,
+							icon: '../img/fav128.png'
+						},
+						channel: channel
+					});
+				}
+
 			} else {
 				time = getTime(inputDuration);
 				carst = {
@@ -578,7 +590,7 @@ module.exports = function (context) {
 	// carst: convert user input to common format
 	function handleCast(data) {
 		addToCarstHistory(data.input);
-		processCarst(data.input, data.inputDuration, data.channel, addCarstToQueue);
+		processCarst(data.input, data.inputDuration, data.channel, 'Carst', addCarstToQueue);
 	}
 
 	// playlist: validation, convert user input to common format
@@ -628,7 +640,7 @@ module.exports = function (context) {
 	// send a carst/command to one specific receiver
 	function sendToReceiver(socket, type, obj) {
 		socket.emit(type, obj);
-		logSending(socket.hostname, type, obj, 'sendToReceiver', '-');
+		//logSending(socket.hostname, type, obj, 'sendToReceiver', '-');
 	}
 
 	// send a carst/command to all receivers
@@ -716,7 +728,7 @@ module.exports = function (context) {
 
 		socket.on('carstNow', function(data) {
 			if(regExp.carst.test(data.input) || regExp.app.test(data.input)) {
-					processCarst(data.input, data.inputDuration,data.channel, function(carst) {
+					processCarst(data.input, data.inputDuration,data.channel, 'Instant Carst', function(carst) {
 						unshiftCarst(carst);
 					});
 			} else if(regExp.playlist.test(data.input)) {
@@ -742,7 +754,7 @@ module.exports = function (context) {
 
 				fs.write(fd, binary, null, 'Binary', function(err, written, buff) {
 					fs.close(fd, function() {
-						processCarst('file://' + name , data.duration,  data.channel, addCarstToQueue);
+						processCarst('file://' + name , data.duration,  data.channel, 'File Carst', addCarstToQueue);
 					});
 				});
 			});
@@ -807,7 +819,7 @@ module.exports = function (context) {
 					socket.emit('openPlaylistError');
 					return true;
 				} else {
-					processCarst(carst.url, carst.timeString, '', function(carst) {
+					processCarst(carst.url, carst.timeString, '', 'no', function(carst) {
 						carst.id = index;
 						playlist.carsts[index] = carst;
 						if(playlist.carsts.length === data.carsts.length) {
@@ -926,7 +938,7 @@ module.exports = function (context) {
 			var url = data.eventCarst.url;
 			var clockTime = data.eventCarst.clock.split(':');
 			if(clockTime[0] && clockTime[1] && Number.isInteger(clockTime[0]) && Number.isInteger(clockTime[1]) && clockTime[0] >= 0 && clockTime[0] <= 24 && clockTime[1] >= 0 && clockTime[1] <= 60 && regExp.carst.test(url)) {
-				processCarst(url, data.eventCarst.duration, channel, function(carst) {
+				processCarst(url, data.eventCarst.duration, channel, 'Event', function(carst) {
 					var event = {
 						channel: channel,
 						eventCarst: carst,
@@ -1019,13 +1031,7 @@ module.exports = function (context) {
 
 		socket.on('registerReceiver', function(data) {
 			var channel = data.channel || context.config.defaultChannel;
-			var hostname = data.hostname;
 			socket.channel = channel;
-			socket.hostname = hostname;
-
-			if(hostname && hostname.length > 3 && !receivers[hostname]) {
-
-				logRegistration(hostname, channel);
 
 				if(channels.indexOf(channel) === -1) {
 					channels.push(channel);
@@ -1063,10 +1069,6 @@ module.exports = function (context) {
 				}
 
 
-				if(!receivers[hostname]) {
-					receivers[hostname] = receivers[hostname] || channel;
-				}
-
 				if(!countReceivers[channel]) {
 					countReceivers[channel] = 0;
 				}
@@ -1079,16 +1081,6 @@ module.exports = function (context) {
 
 				updateSockets();
 
-				context.io.sockets.emit('message', {
-					title: hostname,
-					options: {
-						body: "receiver called " + hostname + " joined channel " + channel,
-						icon: '../img/info-icon.png'
-					},
-					channel: channel,
-					counter: '' + countReceivers[channel]
-				});
-
 				socket.emit('registrationSuccessfully');
 				if(carsts[channel].length > 0) {
 					sendToReceiver(socket, 'carst', carsts[channel][0]);
@@ -1098,22 +1090,9 @@ module.exports = function (context) {
 						sendToReceiver(socket, 'carst', defaultCarst[channel].playlist.carsts[countPosDC[channel]-1]);
 					} else {
 						sendToReceiver(socket, 'carst', defaultCarst[channel]);
+						console.log(defaultCarst[channel]);
 					}
 				}
-			} else {
-				var message;
-				if(!hostname) {
-					message = "Please provide a receiver name.";
-				} else if(!hostname.length > 3) {
-					message = "Receiver name is too short.";
-				} else if(receivers[hostname]) {
-					message = "Receiver name is already taken.";
-				} else {
-					message = "Something went wrong";
-				}
-
-				socket.emit('registrationFailed', message);
-			}
 		});
 
 		/**************************************************************/
@@ -1121,26 +1100,13 @@ module.exports = function (context) {
 		/**************************************************************/
 
 		socket.on('disconnect', function() {
-			var hostname = socket.hostname;
 			var channel = socket.channel;
 				countReceivers[channel]--;
-				delete receivers[hostname];
 				if(countReceivers[channel] === 0 && channel !== channels[0]) {
 					closeChannel(channel);
 					updateSockets();
 				}
 
-				logDeregistration(hostname, channel);
-
-				context.io.sockets.emit('message', {
-					title: hostname,
-					options: {
-						body: hostname + ' disconnected from ' + channel,
-						icon: '../img/info-icon.png'
-					},
-					channel: channel,
-					counter: countReceivers[channel]
-				});
 		});
 
 	});
@@ -1179,7 +1145,7 @@ module.exports = function (context) {
 		console.log('*************************************************');
 		console.log('*************************************************');
 
-		processCarst(':github', '5', '#' + channel, function(carst) {
+		processCarst(':github', '5', '#' + channel, 'App Carst', function(carst) {
 			unshiftCarst(carst);
 		});
 
