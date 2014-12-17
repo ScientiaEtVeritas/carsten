@@ -83,23 +83,9 @@ In case of default settings you can open http://localhost:3000 in your browser o
 Show Casts
 ----------
 
-To display carsts you need to install a carsten receiver. 
-There is another repository for the carsten receiver: https://github.com/carst-it/carsten-receiver
-
-You can install a carsten receiver on every device, so it's possible to install it on a Raspberry Pi connected to a TV for the best carsten experience.
-
-Chrome Extension
-------------------------
-
-We have a public chrome extension, so you can carst every tab with one click! Awesome!
+We have a public chrome extension, so you can carst every tab with one click! Awesome! You can also start a receiver directly with the extension.
 
 You can download the chrome extension for carsten from: https://chrome.google.com/webstore/detail/carsten/iajlnlmlcidjdpjgdjkkopijgfellabb
-
- 1. If you want to carst a Browser Tab, you can click on the Monitor Icon on the upper-right corner.
- 2. You have to set up the Carsten endpoint once. You can set up more than one Carsten endpoint. Enter your Carsten URL and a channel at Configuration and click "Add new configuration".
- 3. Now you can click on that specific configuration to carst a tab to all receivers that have subcribed to the channel you have provided on that endpoint.
- 4. After carsting something, the carsts queue appears and you can change positions of carsts or delete them.
- 5. 
  
 Carsten Plugins
 --------------------------
