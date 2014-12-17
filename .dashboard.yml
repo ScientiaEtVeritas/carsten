@@ -1,0 +1,10 @@
+logo: https://raw.githubusercontent.com/carst-it/carsten/master/public/img/fav128.png
+delay: 5               
+branch:                
+  - master
+stats:                 
+  - url: http://github-dashboard.cfapps.io/api/github/stars?user=carst-it&repo=carsten
+    icon: octicon octicon-star
+  - url: http://github-dashboard.cfapps.io/api/github/zen
+  - url: http://github-dashboard.cfapps.io/api/github/issues?user=carst-it&repo=carsten
+    icon: octicon octicon-issue-opened
