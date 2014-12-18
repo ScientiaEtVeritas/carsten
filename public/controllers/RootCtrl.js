@@ -538,7 +538,7 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
     $scope.saveEvent = function() {
 
       $scope.newEvent.url= $('#newevent_url').val();
-      $scope.newEvent.clock = $scope.timeZone($('#newevent_clock').val());
+      $scope.newEvent.clock = $scope.timeZone($('#newevent_clock').val(), false);
       $scope.newEvent.duration = evSlider.getValue();
 
       socket.emit('newEvent', {
@@ -820,9 +820,13 @@ app.controller('RootCtrl', ['$scope', '$http', '$rootScope', '$location', '$wind
       });
     });
 
-      $scope.timeZone = function(date) {
+      $scope.timeZone = function(date, show) {
           date = date.split(':');
-          return (+date[0] + $scope.different) + ':' + date[1];
+          if(show) {
+              return (+date[0] + $scope.different) + ':' + date[1];
+          } else {
+              return (+date[0] - $scope.different) + ':' + date[1];
+          }
       };
 
     socket.on('sendChannels', function(data) {
