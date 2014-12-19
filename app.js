@@ -7,7 +7,7 @@ var url           = require('url');
 
 //set context
 var context        = {};
-context.request    = require('request');;
+context.request    = require('request');
 context.config     = require('./config');
 context.app        = express();
 context.sockets    = [];
@@ -15,6 +15,7 @@ context.rest       = new require('node-rest-client').Client();
 context.mongoose   = require('mongoose');
 context.http       = require('http');
 context.cheerio	   = require('cheerio');
+context.path		= path;
 
 console.log('\n\n   ██████╗ █████╗ ██████╗ ███████╗████████╗███████╗███╗   ██╗\n'+
 '  ██╔════╝██╔══██╗██╔══██╗██╔════╝╚══██╔══╝██╔════╝████╗  ██║\n'+
