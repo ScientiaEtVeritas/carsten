@@ -419,7 +419,7 @@ module.exports = function (context) {
 
 		utils.logSending('all', type, obj, 'sendToReceivers', channel);
 		receiversockets.emit(type, obj);
-	}
+	};
 
 	/**********************************************************************************/
 	/************************ COMMUNICATION WITH CLIENT SOCKET ************************/
@@ -674,15 +674,20 @@ module.exports = function (context) {
 		/********************* GET PREVIEW PICTURES *******************/
 		/**************************************************************/
 
+		// Screensharing?
 		socket.on('capture', function(image) {
-			var buff= new Buffer(image.toString('binary'),'binary');
+			//var buff= new Buffer(image.toString('binary'),'binary');
 
-			capture[socket.channel] = {
-				buff: buff.toString('base64'),
+						capture[socket.channel] = {
+				buff: image,
 				channel: socket.channel
 			};
 
-			context.io.sockets.emit('capture', capture);
+			/*receiversockets.emit('carst', {
+				url: image
+			});*/
+
+			//context.io.sockets.emit('capture', capture);
 		});
 
 		/**************************************************************/
